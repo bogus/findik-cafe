@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="72" height="72">
+	<mx:Metadata>
+		[Event(name="beforeDelete", type="com.medratech.bsse.util.ItemDeleteEvent")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.medratech.bsse.util.ItemDeleteEvent;
+			import mx.core.Application;
+			import mx.controls.PopUpButton;
+			import mx.managers.PopUpManager;
+			import mx.events.CloseEvent;
+			import mx.controls.Alert;
+			import mx.collections.ArrayCollection;
+			import mx.managers.DragManager;
+			import mx.core.IUIComponent;
+			import mx.events.DragEvent;
+			import mx.controls.DataGrid;
+			
+			[Bindable]
+			public var excludedGrids:ArrayCollection = new ArrayCollection();
+			
+			private var dataGrid:RemoteDoubleClickDataGrid = new RemoteDoubleClickDataGrid();
+			private var itemsArray:Array;
+			private var componentId:String;
+			private function deleteDragEnter(event:DragEvent):void {
+			    var obj:IUIComponent = IUIComponent(event.currentTarget);
+			    event.preventDefault();
+			    dataGrid = IUIComponent(event.dragInitiator) as RemoteDoubleClickDataGrid;
+			    if(!excludedGrids.contains(dataGrid.id))
+			    	DragManager.acceptDragDrop(obj);
+			}
+			
+			private function deleteDragDrop(event:DragEvent):void {
+				if (event.dragSource.hasFormat("items"))
+			    {
+			    	
+				    var alert:Alert = Alert.show(resourceManager.getString("resources", "delete.confirm"),
+				    		resourceManager.getString("resources", "delete.confirm.caption"),
+				    		Alert.OK|Alert.CANCEL, Application.application as Sprite,ConfirmDelete,null,Alert.OK)
+
+			    	itemsArray = event.dragSource.dataForFormat("items") as Array;
+			    	componentId = (IUIComponent(event.dragInitiator) as RemoteDoubleClickDataGrid).id;
+				}
+			}
+			
+			public function ConfirmDelete(eventObj:CloseEvent):void
+			{
+			   if(eventObj.detail==Alert.OK)
+			   {
+			   		var event:ItemDeleteEvent = new ItemDeleteEvent(ItemDeleteEvent.BEFORE_DELETE);
+			   		event.componentId = componentId;
+			   		event.items = itemsArray;
+					dispatchEvent(event);
+			   		dataGrid.remove(itemsArray);
+			   }
+			}
+		]]> 
+	</mx:Script>
+	<mx:Image id="image"
+	        source="@Embed('/assets/images/remove.png')" 
+	        dragDrop="deleteDragDrop(event);" dragEnter="deleteDragEnter(event);"
+	        x="0" y="0" width="64" height="64"
+	        toolTip="To delete records drag and drop from list..."/>
+</mx:Canvas>

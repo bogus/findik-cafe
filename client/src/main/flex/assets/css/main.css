@@ -1,0 +1,203 @@
+/* CSS file */
+@font-face {
+    src:url("../fonts/Trebuchet"); 
+    fontFamily: myFontFamily;
+    advancedAntiAliasing: true;
+    font-weight:normal;
+    font-style:normal;
+}
+
+@font-face {
+    src:url("../fonts/TrebuchetBold"); 
+    fontFamily: myFontFamily;
+    advancedAntiAliasing: true;
+    font-weight:bold;
+    font-style:normal;
+}
+
+Application {
+   	color: #000000;
+/*  
+	This support added programatically	 
+   	borderSkin: ClassReference("com.medratech.bsse.component.RepeatedBackground"); 
+	background-image: Embed("../images/grey.jpg");
+    font-family: myFontFamily;
+*/
+}
+
+Menu
+{
+	color:#000000;
+	rollOverColor:#08246B;
+	selectionColor:#08246B;
+	textRollOverColor:#FFFFFF;
+	textSelectedColor:#FFFFFF;
+}
+
+MenuBar
+{
+	backgroundColor:#D6D3CE;
+	backgroundSkin: Embed(source="../images/menubar/MBSkin.gif");
+	itemDownSkin: Embed(source="../images/menubar/MBSelSkin.gif");
+	itemOverSkin: Embed(source="../images/menubar/MBSelSkin.gif");
+	itemUpSkin: Embed(source="../images/menubar/MBSkin.gif");
+	rollOverColor:#08246B; 
+	textRollOverColor:#FFFFFF;
+	textSelectedColor:#FFFFFF;
+	selectionColor:#08246B;
+	font-weight:bold;
+}
+
+MenuBarItem
+{
+	color:#000000;
+	textRollOverColor:#FFFFFF;
+	textSelectedColor:#FFFFFF;
+}
+
+DraggablePanel
+{
+	resize-grip-skin:          	Embed(source="../images/panel/resizeHandler.png");
+	
+	actionAlpha:		 		0.75;
+    border-color: 				#ffffff;
+    border-alpha: 				1;
+    border-thickness-left: 		0;
+    border-thickness-top: 		0;
+    border-thickness-bottom:	9;
+    border-thickness-right: 	0;
+    corner-radius: 				6;
+    highlight-alphas: 			0.1, 0;
+    header-colors: 				#666666, #333333;
+    footer-colors: 				#ffffff, #ffffff;
+    dropShadowEnabled: 			true;
+    shadow-distance:			4;
+    
+    title-style-name:			"mypanelTitle";
+    close-button-style-name:	"closeButton";
+    minimize-button-style-name:	"minimizeButton";
+    maximize-button-style-name:	"maximizeButton";
+    
+    inactive-header-colors: 	#999999, #666666;
+    inactive-footer-colors: 	#ffffff, #ffffff;
+	inactive-shadow-distance:	1;
+	inactive-title-style-name:	"mypanelInactiveTitle";
+}
+
+.closeButton
+{
+	icon: 						Embed(source="../images/panel/icon_close_up.png");
+	up-icon: 					Embed(source="../images/panel/icon_close_up.png");
+	over-icon: 					Embed(source="../images/panel/icon_close_over.png");
+	down-icon: 					Embed(source="../images/panel/icon_close_down.png");
+	disabled-skin: 				Embed(source="../images/panel/clear.png");
+	selected-up-skin: 			Embed(source="../images/panel/clear.png");
+	selected-over-skin: 		Embed(source="../images/panel/clear.png");
+	selected-down-skin: 		Embed(source="../images/panel/clear.png");
+    down-skin: 					Embed(source="../images/panel/clear.png");
+    over-skin: 					Embed(source="../images/panel/clear.png");
+    up-skin: 					Embed(source="../images/panel/clear.png");	
+}
+
+.maximizeButton
+{
+	icon: 						Embed(source="../images/panel/icon_expand_up.png");
+	up-icon: 					Embed(source="../images/panel/icon_expand_up.png");
+	over-icon: 					Embed(source="../images/panel/icon_expand_over.png");
+	selected-over-icon: 		Embed(source="../images/panel/icon_expand_over.png");
+	down-icon: 					Embed(source="../images/panel/icon_expand_down.png");
+	selected-down-icon: 		Embed(source="../images/panel/icon_expand_down.png");
+	disabled-skin: 				Embed(source="../images/panel/clear.png");
+	selected-up-skin: 			Embed(source="../images/panel/clear.png");
+	selected-over-skin: 		Embed(source="../images/panel/clear.png");
+	selected-down-skin: 		Embed(source="../images/panel/clear.png");
+    down-skin: 					Embed(source="../images/panel/clear.png");
+    over-skin: 					Embed(source="../images/panel/clear.png");
+    up-skin: 					Embed(source="../images/panel/clear.png");	
+}
+
+.minimizeButton
+{
+	icon: 						Embed(source="../images/panel/icon_minimize_up.png");
+	up-icon: 					Embed(source="../images/panel/icon_minimize_up.png");
+	over-icon: 					Embed(source="../images/panel/icon_minimize_over.png");
+	selected-over-icon: 		Embed(source="../images/panel/icon_minimize_over.png");
+	down-icon: 					Embed(source="../images/panel/icon_minimize_down.png");
+	selected-down-icon: 		Embed(source="../images/panel/icon_minimize_down.png");
+	disabled-skin: 				Embed(source="../images/panel/clear.png");
+	selected-up-skin: 			Embed(source="../images/panel/clear.png");
+	selected-over-skin: 		Embed(source="../images/panel/clear.png");
+	selected-down-skin: 		Embed(source="../images/panel/clear.png");
+    down-skin: 					Embed(source="../images/panel/clear.png");
+    over-skin: 					Embed(source="../images/panel/clear.png");
+    up-skin: 					Embed(source="../images/panel/clear.png");
+}
+
+.mypanelTitle
+{
+	font-weight:				bold;
+    color: 						#ffffff;
+}
+
+.mypanelInactiveTitle
+{
+	font-weight:				bold;
+    color: 						#bbbbbb;
+}
+
+.leftBox
+{
+	border-style:				solid;
+	border-sides:				right;
+	border-color:				#666666;
+	background-color:			#000000;
+	background-alpha:			0.6;
+	
+	padding-top:				20;
+	padding-bottom:				20;
+	padding-left:				20;
+	padding-right:				20;
+}
+
+.linkButtonWindowShade {
+    headerClass:ClassReference('mx.controls.LinkButton');
+    header-style-name: linkButtonStyle;
+ 
+    drop-shadow-enabled:true;
+    
+    corner-radius:10;
+    border-style:solid;
+    
+    background-color:#efefef;
+    background-alpha:.7;
+}         
+
+.linkButtonStyle {
+    corner-radius:10;       
+    fill-alphas:1,1;
+    padding-left:10;
+}
+
+.canvasRightEdge {
+	disabledSkin: ClassReference("com.medratech.bsse.component.skin.CanvasRightEdgeSkin");
+	downSkin: ClassReference("com.medratech.bsse.component.skin.CanvasRightEdgeSkin");
+	overSkin: ClassReference("com.medratech.bsse.component.skin.CanvasRightEdgeSkin");
+	upSkin: ClassReference("com.medratech.bsse.component.skin.CanvasRightEdgeSkin");
+	selectedDisabledSkin: ClassReference("com.medratech.bsse.component.skin.CanvasRightEdgeSkin");
+	selectedDownSkin: ClassReference("com.medratech.bsse.component.skin.CanvasRightEdgeSkin");
+	selectedOverSkin: ClassReference("com.medratech.bsse.component.skin.CanvasRightEdgeSkin");
+	selectedUpSkin: ClassReference("com.medratech.bsse.component.skin.CanvasRightEdgeSkin");
+}	
+
+.canvasBottomEdge {
+	disabledSkin: ClassReference("com.medratech.bsse.component.skin.CanvasBottomEdgeSkin");
+	downSkin: ClassReference("com.medratech.bsse.component.skin.CanvasBottomEdgeSkin");
+	overSkin: ClassReference("com.medratech.bsse.component.skin.CanvasBottomEdgeSkin");
+	upSkin: ClassReference("com.medratech.bsse.component.skin.CanvasBottomEdgeSkin");
+	selectedDisabledSkin: ClassReference("com.medratech.bsse.component.skin.CanvasBottomEdgeSkin");
+	selectedDownSkin: ClassReference("com.medratech.bsse.component.skin.CanvasBottomEdgeSkin");
+	selectedOverSkin: ClassReference("com.medratech.bsse.component.skin.CanvasBottomEdgeSkin");
+	selectedUpSkin: ClassReference("com.medratech.bsse.component.skin.CanvasBottomEdgeSkin");
+}	
+
+

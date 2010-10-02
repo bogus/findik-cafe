@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+	title="{resourceManager.getString('resources','cafeitem.info.title')}" 
+	xmlns:component="com.medratech.bsse.component.*">
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.events.ValidationResultEvent;
+			import mx.managers.PopUpManager;
+		
+			[Bindable]
+			public var cafeItemViewer:CafeItemViewer;
+		
+			private function close():void {
+				PopUpManager.removePopUp(this);
+			}
+			
+			private function date_labelFunc(item:Object, column:DataGridColumn):String {
+                return dateFormatter.format(item.eventData);
+            }
+
+		]]>
+	</mx:Script>
+	<mx:VBox paddingBottom="5" paddingLeft="5" paddingRight="5" paddingTop="5">
+		<mx:Form verticalGap="0">
+			<mx:FormItem label="Type">
+				<mx:Label text="{cafeItemViewer.info.type == 0 ? resourceManager.getString('resources','cafeitem.info.type.3') : 	
+				cafeItemViewer.info.type == 1 ? resourceManager.getString('resources','cafeitem.info.type.2') : 
+				cafeItemViewer.info.type == 2 ? resourceManager.getString('resources','cafeitem.info.type.1') : ''}" />
+			</mx:FormItem>
+			<mx:FormItem label="{resourceManager.getString('resources','cafeitem.info.name')}">
+				<mx:Label text="{cafeItemViewer.info.name}" />
+			</mx:FormItem>
+			<mx:FormItem label="{resourceManager.getString('resources','cafeitem.info.tariff')}">
+				<mx:Label text="{cafeItemViewer.info.tariff.name}" />
+			</mx:FormItem>
+			<mx:FormItem visible="{cafeItemViewer.info.type == 2}" label="IP">
+				<mx:Label text="{cafeItemViewer.info.IP}" />
+			</mx:FormItem>
+			<mx:FormItem visible="{cafeItemViewer.info.type == 2}" label="Hostname">
+				<mx:Label text="{cafeItemViewer.info.hostname}" />
+			</mx:FormItem>
+		</mx:Form>
+		<component:RemoteDoubleClickDataGrid editable="false" id="sessionDataGrid"
+			remoteDestination="sessionDataService" 
+			creationComplete="{sessionDataGrid.init(); sessionDataGrid.changeSelectedCategory(cafeItemViewer.info.id);}">
+			<component:columns>
+				<mx:DataGridColumn dataField="eventStartTime" headerText="{resourceManager.getString('resources','cafeitem.info.dg.starttime')}" labelFunction="date_labelFunc" />
+				<mx:DataGridColumn dataField="eventEndTime" headerText="{resourceManager.getString('resources','cafeitem.info.dg.endtime')}" labelFunction="date_labelFunc"/>
+				<mx:DataGridColumn dataField="eventData" headerText="{resourceManager.getString('resources','cafeitem.info.dg.bill')}"/>
+			</component:columns>
+		</component:RemoteDoubleClickDataGrid> 
+	</mx:VBox>
+	<mx:ControlBar horizontalAlign="right">
+		<mx:Button label="{resourceManager.getString('resources','cafeitem.info.close')}" click="close()" />
+	</mx:ControlBar>
+	
+	<mx:DateFormatter id="dateFormatter" formatString="DD/MM/YYYY JJ:NN" />
+</mx:TitleWindow>

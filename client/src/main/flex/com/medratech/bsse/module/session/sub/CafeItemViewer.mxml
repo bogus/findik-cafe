@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="160" height="160" 
+	backgroundAlpha="0.5" verticalScrollPolicy="off" horizontalScrollPolicy="off"
+	creationComplete="init()" removedFromStage="removed()" >
+	<mx:Script>
+		<![CDATA[
+			import mx.events.StateChangeEvent;
+			import com.medratech.bsse.util.StatusChangedEvent;
+			import com.medratech.bsse.util.RemoteDataObjectEvent;
+			import mx.events.CloseEvent;
+			import mx.controls.Alert;
+			import flash.sampler.NewObjectSample;
+			import mx.managers.PopUpManagerChildList;
+			import mx.managers.PopUpManager;
+			import mx.core.UIComponent;
+			import com.medratech.bsse.component.RemoteDataArray;
+			import org.alivepdf.fonts.Style;
+			import com.medratech.bsse.model.CafeItem;
+			import mx.collections.ArrayCollection;
+			import flash.utils.Timer;
+            import flash.events.TimerEvent;
+			
+			[Bindable]
+			public var info:CafeItem;
+			
+			private var remoteCafeItems:RemoteDataArray;
+			private static var GMTTimeDifference:Number = 120*60*1000;
+			
+			private var timer:Timer;
+			private var statusChanged:Boolean;
+			
+			private function init():void {
+				var contextMenu:ContextMenu = new ContextMenu();
+				var contextMenuItem:ContextMenuItem;
+				var arr:ArrayCollection = new ArrayCollection();
+				var square:Sprite = new Sprite();
+
+				contextMenuItem = new ContextMenuItem(resourceManager.getString('resources','session.contextmenu.open'));
+				contextMenuItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, openSes);
+				arr.addItem(contextMenuItem); 
+				contextMenuItem = new ContextMenuItem(resourceManager.getString('resources','session.contextmenu.close'));
+				contextMenuItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, close);
+				arr.addItem(contextMenuItem);
+				contextMenuItem = new ContextMenuItem(resourceManager.getString('resources','session.contextmenu.changetime'));
+				contextMenuItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, changeTime);
+				arr.addItem(contextMenuItem);
+				contextMenuItem = new ContextMenuItem(resourceManager.getString('resources','session.contextmenu.info'), true);
+				contextMenuItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, showInfo);
+				arr.addItem(contextMenuItem);
+				if(info.type != 0 && info.type != 1)
+				{
+					contextMenuItem = new ContextMenuItem(resourceManager.getString('resources','session.contextmenu.getscreenshot'), true);
+					contextMenuItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, getScreenshot);
+					arr.addItem(contextMenuItem);
+					contextMenu.customItems[5] = contextMenuItem;
+				}
+				contextMenu.customItems = arr.toArray();
+				contextMenu.hideBuiltInItems();
+				
+				this.contextMenu = contextMenu;
+				
+				switch(info.type)
+				{
+					case 0:
+						this.setStyle("backgroundImage", "assets/images/icons/game-console.png");
+						break;
+					case 1:
+						this.setStyle("backgroundImage", "assets/images/icons/table.jpg");
+						break;
+					default:
+						this.setStyle("backgroundImage", "assets/images/icons/computer.png");
+						break;
+				}
+				
+				adjustContextMenu();
+								
+				remoteCafeItems = new RemoteDataArray(null, 'cafeItemService');
+				remoteCafeItems.init();
+				remoteCafeItems.addEventListener(RemoteDataObjectEvent.DATA_UPDATED, cafeItemDataReceived);
+				remoteCafeItems.addEventListener(RemoteDataObjectEvent.VERSION_RECEIVED, cafeItemDataReceived);
+				
+				timer = new Timer(120000);
+                timer.addEventListener(TimerEvent.TIMER, updateTimer);
+				timer.start();
+				
+				statusChanged = false;
+			}
+			
+			private function adjustContextMenu():void
+			{
+				contextMenu.customItems[0].enabled = (info.tariff != null) && (info.status == 0);
+				contextMenu.customItems[1].enabled = (info.tariff != null) && (info.status == 1);
+				contextMenu.customItems[2].enabled = (info.tariff != null) && (info.status == 1);
+			}
+			
+			private function removed():void
+			{
+				timer.stop();
+			}
+			
+			private function updateTimer(evt:TimerEvent):void {
+				if(info.status == 1)
+				{
+					calculateBill();
+					info = info;
+					if(info.endTime != 0 && new Date().getTime() > info.endTime) {
+						remoteCafeItems.updateObject(info);
+						closeSession();
+					}
+					elapsedTime.text = info.startTime == 0 ? '-' : dateFormatter.format(new Date(new Date().getTime() - info.startTime - GMTTimeDifference));
+					bill.text = info.bill == 0 ? '-' : numberFormatter.format(info.bill);
+				}
+				remoteCafeItems.getVersion(info);
+            }
+
+			
+			private function openSes(event:ContextMenuEvent):void {
+				var openSessionPopup:OpenSession = new OpenSession();
+				openSessionPopup.cafeItemViewer = this;
+				PopUpManager.addPopUp(openSessionPopup, this, true);
+				PopUpManager.centerPopUp(openSessionPopup);
+			}
+			
+			private function close(event:ContextMenuEvent):void {
+				calculateBill();
+				var closeSessionPopup:CloseSession = new CloseSession();
+				closeSessionPopup.cafeItemViewer = this;
+				PopUpManager.addPopUp(closeSessionPopup, this, true);
+				PopUpManager.centerPopUp(closeSessionPopup);
+			}
+			
+			private function showInfo(event:ContextMenuEvent):void {
+				var infoPopup:Info = new Info();
+				infoPopup.cafeItemViewer = this;
+				PopUpManager.addPopUp(infoPopup, this, true);
+				PopUpManager.centerPopUp(infoPopup);
+			}
+			
+			private function changeTime(event:ContextMenuEvent):void {
+				var editSessionPopup:ChangeSessionTime = new ChangeSessionTime();
+				editSessionPopup.cafeItemViewer = this;
+				PopUpManager.addPopUp(editSessionPopup, this, true);
+				PopUpManager.centerPopUp(editSessionPopup);
+			}
+			
+			private function getScreenshot(event:ContextMenuEvent):void {
+				
+			}
+			
+			public function openSession(limited:Boolean, time:Number):void
+			{
+				info.startTime = new Date().getTime();
+				if(limited)	{
+					info.endTime = time;
+				} 
+				else {
+					info.endTime = 0;
+				}
+				info.status = 1;
+				info.hasOpenRequest = false;
+				statusChanged = true;
+				remoteCafeItems.updateObject(info);
+				 
+				adjustContextMenu();
+				calculateBill();
+			}
+			
+			public function closeSession():void
+			{
+				info.status = 0;
+				statusChanged = true;
+				remoteCafeItems.updateObject(info);
+		
+				adjustContextMenu();
+			}
+			
+			private function calculateBill():void
+			{
+				if(info.status == 0)
+					return;
+					
+				var spentTime:Number = new Date().getTime() - info.startTime;
+				var currentTime:Number = new Date().getTime();
+				var prepaidTime:Number = info.tariff.minBillTime * 60 * 1000;
+				var currentHour:int = new Date().getHours();
+				var currentDay:int = (new Date().getDay() + 6) % 7;
+				var i:int = 0;
+				var currentPrice:Number = 0;
+				var startDate:Date = new Date(info.startTime);
+				var spentTimeMins:Number = spentTime /(60*1000);
+				
+				if(spentTime > prepaidTime) {
+					var tempTime:Number = info.startTime;
+					for(var tempMins:Number = 0; tempTime < currentTime; tempTime += tempMins * 60 * 1000)
+					{
+						tempMins = 60 - new Date(tempTime).getMinutes();
+						var ratio:Number = tempMins / 60.0;
+						currentDay = new Date(tempTime).getDay();
+						currentHour = new Date(tempTime).getHours();
+						
+						for(i = 0; i < info.tariff.prices.length; i++)
+						{
+							if(info.tariff.prices.getItemAt(i).day == currentDay &&
+								info.tariff.prices.getItemAt(i).hour == currentHour) {
+								currentPrice +=  info.tariff.prices.getItemAt(i).price * ratio;
+								break;
+							}
+						}		
+					}
+				} else {
+					
+					for(i = 0; i < info.tariff.prices.length; i++)
+					{
+						if(info.tariff.prices.getItemAt(i).day == currentDay &&
+							info.tariff.prices.getItemAt(i).hour == currentHour) {
+							currentPrice = (info.tariff.minBillTime / 60.0) * info.tariff.prices.getItemAt(i).price;
+							break;
+						}
+					}		
+				}
+				
+				if(info.bill == 0 || currentPrice != info.bill) {
+					info.bill = currentPrice;
+					remoteCafeItems.updateObject(info);
+				}
+			}
+			
+			private function cafeItemDataReceived(event:RemoteDataObjectEvent):void
+			{
+				if(event.type == RemoteDataObjectEvent.VERSION_RECEIVED) {
+					if(remoteCafeItems.remoteReturnObject > info.version)
+						remoteCafeItems.refresh(info);
+				} else if(event.type == RemoteDataObjectEvent.DATA_UPDATED) {
+					var cafeItem:CafeItem = remoteCafeItems.remoteReturnObject as CafeItem;
+					if(cafeItem.status != info.status)
+					{
+						if(cafeItem.status == 0)
+							closeSession();
+						else
+							openSession(false, 0);
+					}
+					info = cafeItem;
+				} else if(event.type == RemoteDataObjectEvent.REFRESHED) {
+					info = remoteCafeItems.remoteReturnObject as CafeItem;
+				}
+			}
+		
+		]]>
+	</mx:Script>
+	<mx:Image source="assets/images/icons/22x22/sessionon.png" visible="{info.status == 1}" x="10" y="10"/>
+	<mx:Image source="assets/images/icons/22x22/sessionoff.png" visible="{info.status == 0}" x="10" y="10"/>
+	<mx:VBox paddingBottom="5" paddingLeft="5" paddingRight="5" paddingTop="5" x="0" y="0"
+		width="100%" height="100%" horizontalAlign="center" verticalAlign="middle" id="vbox"
+		verticalGap="1" verticalScrollPolicy="off" horizontalScrollPolicy="off">
+		<mx:Text text="{info.name} ({info.tariff.name})" />
+		<mx:Form width="100%" height="100%" verticalGap="1">
+			<mx:FormHeading height="0" />
+			<mx:FormItem label="{resourceManager.getString('resources','cafeitem.openning')}">
+				<mx:Label text="{info.startTime == 0 ? '-' : dateFormatter.format(new Date(info.startTime))}" />
+			</mx:FormItem>
+			<mx:FormItem label="{resourceManager.getString('resources','cafeitem.elapsed')}">
+				<mx:Label id="elapsedTime" text="{info.startTime == 0 ? '-' : dateFormatter.format(new Date(new Date().getTime() - info.startTime - GMTTimeDifference))}" />
+			</mx:FormItem>
+			<mx:FormItem label="{resourceManager.getString('resources','cafeitem.ending')}">
+				<mx:Label text="{info.endTime == 0 ? '-' : dateFormatter.format(new Date(info.endTime))}" />
+			</mx:FormItem>
+			<mx:FormItem label="{resourceManager.getString('resources','cafeitem.debt')}">
+				<mx:Label id="bill" text="{info.bill == 0 ? '-' : numberFormatter.format(info.bill)}" fontWeight="bold" fontSize="12"/>
+			</mx:FormItem>
+		</mx:Form>
+		<mx:HBox width="100%" horizontalAlign="center">
+			<mx:Image source="assets/images/icons/22x22/alert.png" id="noTariffWarn" visible="{info.tariff == null}"
+				toolTip="{resourceManager.getString('resources','cafeitem.notariff')}"/>
+			<mx:Spacer width="20" />
+			<mx:Image source="assets/images/icons/22x22/alert.png" id="last5Mins" 
+				visible="{info.endTime != 0 &amp;&amp; info.endTime &lt; (new Date().getTime() + 5*60*1000)}"
+				toolTip="{resourceManager.getString('resources','cafeitem.last5mins')}"/>
+			<mx:Image source="assets/images/icons/22x22/cache.png" id="hasOpenRequest" 
+				visible="{info.hasOpenRequest &amp;&amp; info.status == 0}"
+				toolTip="{resourceManager.getString('resources','cafeitem.hasopenrequest')}"/>
+		</mx:HBox>
+	</mx:VBox>
+	<mx:DateFormatter id="dateFormatter" formatString="JJ:NN" />
+	<mx:NumberFormatter id="numberFormatter"
+            precision="2" rounding="up"/>
+
+</mx:Canvas>

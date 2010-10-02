@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas
+	xmlns:mx="http://www.adobe.com/2006/mxml">
+
+<mx:Script>
+<![CDATA[
+	import mx.controls.Image;
+
+	private var _image : Image = null;
+
+	public function setTileImage( image : Image ) : void
+	{
+		this._image = image;
+		this.invalidateDisplayList();
+	}
+
+    override protected function updateDisplayList( unscaledWidth : Number, unscaledHeight : Number ) : void
+    {
+        super.updateDisplayList(unscaledWidth, unscaledHeight );
+
+        if ( _image != null )
+        {
+	        var bitmap : Bitmap = Bitmap( _image.content );
+	        var bitmapData : BitmapData = new BitmapData( bitmap.width, bitmap.height );
+	        bitmapData.draw( bitmap );      
+
+	        graphics.clear();
+	        graphics.beginBitmapFill( bitmapData );
+	        graphics.drawRect(0, 0, unscaledWidth, unscaledHeight);
+	        graphics.endFill();
+	    }
+    }
+]]>
+</mx:Script>
+</mx:Canvas>
+

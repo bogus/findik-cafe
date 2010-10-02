@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<actionScriptProperties mainApplicationPath="index.mxml" version="3">
+<compiler additionalCompilerArguments="-locale en_US tr_TR -services c:\workspace\findik2\findik-cafe\client\..\config\src\main\resources\services-config.xml -context-root findik-cafe" copyDependentFiles="true" enableModuleDebug="true" generateAccessible="false" htmlExpressInstall="true" htmlGenerate="false" htmlHistoryManagement="true" htmlPlayerVersion="10.0.0" htmlPlayerVersionCheck="true" outputFolderPath="bin-debug" sourceFolderPath="src/main/flex" strict="true" useApolloConfig="false" verifyDigests="true" warn="true">
+<compilerSourcePath>
+<compilerSourcePathEntry kind="1" linkType="1" path="src/main/flex"/>
+<compilerSourcePathEntry kind="1" linkType="1" path="target/generated-resources"/>
+<compilerSourcePathEntry kind="1" linkType="1" path="src/main/resources"/>
+<compilerSourcePathEntry kind="1" linkType="1" path="src/main/locales/{locale}"/>
+</compilerSourcePath>
+<libraryPath defaultLinkType="1">
+<libraryPathEntry kind="3" linkType="1" path="C:/Documents and Settings/Administrator/.m2/repository/com/adobe/flex/framework/datavisualization/3.5.0.12683/datavisualization-3.5.0.12683.swc" useDefaultLinkType="false"/>
+<libraryPathEntry kind="3" linkType="1" path="C:/Documents and Settings/Administrator/.m2/repository/com/adobe/flex/framework/flex/3.5.0.12683/flex-3.5.0.12683.swc" sourcepath="${PROJECT_FRAMEWORKS}/projects/flex/src" useDefaultLinkType="false"/>
+<libraryPathEntry kind="3" linkType="1" path="C:/Documents and Settings/Administrator/.m2/repository/com/adobe/flex/framework/framework/3.5.0.12683/framework-3.5.0.12683.swc" sourcepath="${PROJECT_FRAMEWORKS}/projects/framework/src" useDefaultLinkType="false"/>
+<libraryPathEntry kind="3" linkType="1" path="C:/Documents and Settings/Administrator/.m2/repository/com/adobe/flex/framework/rpc/3.5.0.12683/rpc-3.5.0.12683.swc" sourcepath="${PROJECT_FRAMEWORKS}/projects/rpc/src" useDefaultLinkType="false"/>
+<libraryPathEntry kind="3" linkType="1" path="C:/Documents and Settings/Administrator/.m2/repository/com/adobe/flex/framework/utilities/3.5.0.12683/utilities-3.5.0.12683.swc" sourcepath="${PROJECT_FRAMEWORKS}/projects/utilities/src" useDefaultLinkType="false"/>
+<libraryPathEntry kind="3" linkType="1" path="C:/Documents and Settings/Administrator/.m2/repository/com/github/as3corelib/0.91/as3corelib-0.91.swc" useDefaultLinkType="false"/>
+<libraryPathEntry kind="3" linkType="1" path="C:/Documents and Settings/Administrator/.m2/repository/com/google/code/flexlib/2.5/flexlib-2.5.swc" useDefaultLinkType="false"/>
+<libraryPathEntry kind="3" linkType="1" path="C:/Documents and Settings/Administrator/.m2/repository/com/google/code/flexedtoolkit/calert/1.0/calert-1.0.swc" useDefaultLinkType="false"/>
+<libraryPathEntry kind="3" linkType="1" path="C:/Documents and Settings/Administrator/.m2/repository/com/yahoo/astra-flex/1.4/astra-flex-1.4.swc" useDefaultLinkType="false"/>
+<libraryPathEntry kind="3" linkType="1" path="C:/Documents and Settings/Administrator/.m2/repository/flexlib/flexlib-bin/2.4/flexlib-bin-2.4.swc" useDefaultLinkType="false"/>
+<libraryPathEntry kind="3" linkType="1" path="C:/Documents and Settings/Administrator/.m2/repository/org/bytearray/alivepdf/1.49/alivepdf-1.49.swc" useDefaultLinkType="false"/>
+<libraryPathEntry kind="3" linkType="1" path="C:/Documents and Settings/Administrator/.m2/repository/com/adobe/flex/framework/datavisualization/3.5.0.12683/datavisualization-3.5.0.12683-en_US.rb.swc" useDefaultLinkType="false"/>
+<libraryPathEntry kind="3" linkType="1" path="C:/Documents and Settings/Administrator/.m2/repository/com/adobe/flex/framework/datavisualization/3.5.0.12683/datavisualization-3.5.0.12683-tr_TR.rb.swc" useDefaultLinkType="false"/>
+<libraryPathEntry kind="3" linkType="1" path="C:/Documents and Settings/Administrator/.m2/repository/com/adobe/flex/framework/framework/3.5.0.12683/framework-3.5.0.12683-en_US.rb.swc" useDefaultLinkType="false"/>
+<libraryPathEntry kind="3" linkType="1" path="C:/Documents and Settings/Administrator/.m2/repository/com/adobe/flex/framework/framework/3.5.0.12683/framework-3.5.0.12683-tr_TR.rb.swc" useDefaultLinkType="false"/>
+<libraryPathEntry kind="3" linkType="1" path="C:/Documents and Settings/Administrator/.m2/repository/com/adobe/flex/framework/rpc/3.5.0.12683/rpc-3.5.0.12683-en_US.rb.swc" useDefaultLinkType="false"/>
+<libraryPathEntry kind="3" linkType="1" path="C:/Documents and Settings/Administrator/.m2/repository/com/adobe/flex/framework/rpc/3.5.0.12683/rpc-3.5.0.12683-tr_TR.rb.swc" useDefaultLinkType="false"/>
+<libraryPathEntry kind="4" path="">
+<excludedEntries>
+<libraryPathEntry kind="3" linkType="1" path="${PROJECT_FRAMEWORKS}/libs/flex.swc" useDefaultLinkType="false"/>
+<libraryPathEntry kind="3" linkType="1" path="${PROJECT_FRAMEWORKS}/libs/automation_agent.swc" useDefaultLinkType="false"/>
+<libraryPathEntry kind="3" linkType="1" path="${PROJECT_FRAMEWORKS}/libs/automation.swc" useDefaultLinkType="false"/>
+<libraryPathEntry kind="1" linkType="1" path="${PROJECT_FRAMEWORKS}/locale/{locale}"/>
+<libraryPathEntry kind="3" linkType="1" path="${PROJECT_FRAMEWORKS}/libs/automation_flashflexkit.swc" useDefaultLinkType="false"/>
+<libraryPathEntry kind="3" linkType="1" path="${PROJECT_FRAMEWORKS}/libs/utilities.swc" useDefaultLinkType="false"/>
+<libraryPathEntry kind="3" linkType="1" path="${PROJECT_FRAMEWORKS}/libs/qtp.swc" useDefaultLinkType="false"/>
+<libraryPathEntry kind="3" linkType="1" path="${PROJECT_FRAMEWORKS}/libs/rpc.swc" useDefaultLinkType="false"/>
+<libraryPathEntry kind="3" linkType="1" path="${PROJECT_FRAMEWORKS}/libs/datavisualization.swc" useDefaultLinkType="false"/>
+<libraryPathEntry kind="3" linkType="1" path="${PROJECT_FRAMEWORKS}/libs/automation_dmv.swc" useDefaultLinkType="false"/>
+<libraryPathEntry kind="3" linkType="4" path="${PROJECT_FRAMEWORKS}/libs/framework.swc" useDefaultLinkType="true">
+<crossDomainRsls>
+<crossDomainRslEntry autoExtract="true" policyFileUrl="" rslUrl="framework_3.1.0.2710.swz"/>
+<crossDomainRslEntry autoExtract="true" policyFileUrl="" rslUrl="framework_3.1.0.2710.swf"/>
+</crossDomainRsls>
+</libraryPathEntry>
+</excludedEntries>
+</libraryPathEntry>
+</libraryPath>
+<sourceAttachmentPath>
+<sourceAttachmentPathEntry kind="3" linkType="1" path="C:/Documents and Settings/Administrator/.m2/repository/com/adobe/flex/framework/flex/3.5.0.12683/flex-3.5.0.12683.swc" sourcepath="${PROJECT_FRAMEWORKS}/projects/flex/src" useDefaultLinkType="false"/>
+<sourceAttachmentPathEntry kind="3" linkType="1" path="C:/Documents and Settings/Administrator/.m2/repository/com/adobe/flex/framework/framework/3.5.0.12683/framework-3.5.0.12683.swc" sourcepath="${PROJECT_FRAMEWORKS}/projects/framework/src" useDefaultLinkType="false"/>
+<sourceAttachmentPathEntry kind="3" linkType="1" path="C:/Documents and Settings/Administrator/.m2/repository/com/adobe/flex/framework/rpc/3.5.0.12683/rpc-3.5.0.12683.swc" sourcepath="${PROJECT_FRAMEWORKS}/projects/rpc/src" useDefaultLinkType="false"/>
+<sourceAttachmentPathEntry kind="3" linkType="1" path="C:/Documents and Settings/Administrator/.m2/repository/com/adobe/flex/framework/utilities/3.5.0.12683/utilities-3.5.0.12683.swc" sourcepath="${PROJECT_FRAMEWORKS}/projects/utilities/src" useDefaultLinkType="false"/>
+</sourceAttachmentPath>
+</compiler>
+<applications>
+<application path="index.mxml"/>
+</applications>
+<modules/>
+<buildCSSFiles/>
+</actionScriptProperties>

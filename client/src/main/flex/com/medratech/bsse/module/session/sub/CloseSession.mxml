@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+	title="{resourceManager.getString('resources','cafeitem.closesession.title')}">
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ValidationResultEvent;
+			import mx.managers.PopUpManager;
+		
+			[Bindable]
+			public var cafeItemViewer:CafeItemViewer;
+		
+			private function openSession():void
+			{
+				if(priceValidator.validate().type != ValidationResultEvent.VALID)
+					return;
+				
+				cafeItemViewer.info.bill = new Number(price.text);
+				
+				cafeItemViewer.closeSession();
+				
+				PopUpManager.removePopUp(this);
+			}
+			
+			private function close():void {
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox paddingBottom="5" paddingLeft="5" paddingRight="5" paddingTop="5">
+		<mx:Label text="{resourceManager.getString('resources','cafeitem.closesession.confirm')}" />
+		<mx:HBox>
+			<mx:Label text="{resourceManager.getString('resources','cafeitem.closesession.amount')} : " />
+			<mx:TextInput id="price" text="{numberFormatter.format(cafeItemViewer.info.bill)}" />
+		</mx:HBox>
+	</mx:VBox>
+	<mx:ControlBar horizontalAlign="right">
+		<mx:Button label="{resourceManager.getString('resources','cafeitem.closesession.title')}" click="openSession()" />
+		<mx:Button label="{resourceManager.getString('resources','cafeitem.opensession.cancel')}" click="close()" />
+	</mx:ControlBar>
+	<mx:NumberValidator source="{price}" property="text" required="true" minValue="0" maxValue="10000" id="priceValidator"/>
+	<mx:NumberFormatter id="numberFormatter"
+            precision="2" rounding="up"/>
+</mx:TitleWindow>

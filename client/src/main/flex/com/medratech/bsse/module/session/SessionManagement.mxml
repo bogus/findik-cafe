@@ -1,0 +1,559 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" 
+xmlns:sub="com.medratech.bsse.module.session.sub.*" xmlns:component="com.medratech.bsse.component.*"
+xmlns:flexlib="flexlib.containers.*" xmlns:stomp="org.codehaus.stomp.*"
+creationComplete="init()" addedToStage="onStage()" removedFromStage="outStage()">
+ 
+	<mx:Script>
+		<![CDATA[
+			import com.medratech.bsse.module.session.sub.ChangeRecoverPassword;
+			import com.medratech.bsse.model.Options;
+			import mx.events.CloseEvent;
+			import mx.managers.BrowserManager;
+			import mx.utils.URLUtil;
+			import mx.messaging.channels.StreamingAMFChannel;
+			import org.codehaus.stomp.event.STOMPErrorEvent;
+			import mx.rpc.events.FaultEvent;
+			import org.codehaus.stomp.headers.ConnectHeaders;
+			import org.codehaus.stomp.event.MessageEvent;
+			import mx.controls.Alert;
+			import flexlib.scheduling.scheduleClasses.utils.Selection;
+			import com.medratech.bsse.model.CafeItem;
+			import mx.managers.DragManager;
+			import mx.core.IUIComponent;
+			import mx.events.DragEvent;
+			import com.medratech.bsse.module.session.sub.TariffManagement;
+			import mx.managers.PopUpManager;
+			import com.medratech.bsse.model.Tariff;
+			import com.medratech.bsse.util.RemoteDataObjectEvent;
+			import com.medratech.bsse.component.RemoteDataArray;
+			import mx.collections.ArrayCollection;
+			import org.codehaus.stomp.STOMPClient;
+			
+			[Bindable]
+			public var tariffs:ArrayCollection;
+			[Bindable]
+			public var itemTariffs:ArrayCollection;
+			[Bindable]
+			private var gameControllers:ArrayCollection;
+			[Bindable]
+			private var computers:ArrayCollection;
+			[Bindable]
+			private var tables:ArrayCollection;
+			[Bindable]
+			public var options:Options; 
+			
+			[Bindable]
+			private var dashboardData:Object;
+			
+			private var remoteComputers:RemoteDataArray;
+			private var remoteGameControllers:RemoteDataArray;
+			private var remoteTables:RemoteDataArray;
+			public var remoteTariffs:RemoteDataArray;
+			private var remoteItemTariffs:RemoteDataArray;
+			public var remoteOptions:RemoteDataArray;
+			
+			private var stompTopic:String = "/topic/FINDIK.NOTIFICATIONS";
+			private var stomp : STOMPClient = new STOMPClient();
+			private var stompChatTopic:String = "/topic/FINDIK.GLOBALCHAT";
+			private var stompChat : STOMPClient = new STOMPClient();
+			
+			private var lastCloseButtonId:String = null;
+			
+			private function init():void
+			{
+				remoteComputers = new RemoteDataArray(null, 'cafeItemService');
+				remoteComputers.init();
+				remoteComputers.addEventListener('dataReceived', computerDataReceived);
+				remoteComputers.addEventListener('dataInserted', computerDataReceived);
+				remoteComputers.addEventListener('dataUpdated', computerDataReceived);
+				remoteComputers.addEventListener('dataDeleted', computerDataReceived);
+				remoteComputers.getObjectByType(2);
+				
+				remoteGameControllers = new RemoteDataArray(null, 'cafeItemService');
+				remoteGameControllers.init();
+				remoteGameControllers.addEventListener('dataReceived', gameConsoleDataReceived);
+				remoteGameControllers.addEventListener('dataInserted', gameConsoleDataReceived);
+				remoteGameControllers.addEventListener('dataUpdated', gameConsoleDataReceived);
+				remoteGameControllers.addEventListener('dataDeleted', gameConsoleDataReceived);
+				remoteGameControllers.getObjectByType(0);
+				
+				remoteTables = new RemoteDataArray(null, 'cafeItemService');
+				remoteTables.init();
+				remoteTables.addEventListener('dataReceived', tableDataReceived);
+				remoteTables.addEventListener('dataInserted', tableDataReceived);
+				remoteTables.addEventListener('dataUpdated', tableDataReceived);
+				remoteTables.addEventListener('dataDeleted', tableDataReceived);
+				remoteTables.getObjectByType(1);
+				
+				remoteTariffs = new RemoteDataArray(null, 'tariffService');
+				remoteTariffs.init();
+				remoteTariffs.addEventListener('dataReceived', tariffDataReceived);
+				
+				remoteItemTariffs = new RemoteDataArray(null, 'cafeItemService');
+				remoteItemTariffs.init();
+				remoteItemTariffs.addEventListener('dataReceived', itemTariffDataReceived);
+				
+				remoteOptions = new RemoteDataArray(null, 'optionsService');
+				remoteOptions.init();
+				remoteOptions.addEventListener('dataReceived', optionsDataReceived);
+				
+				//stompChat.connect("localhost",61613);
+				stompChat.connect(mx.utils.URLUtil.getServerName(BrowserManager.getInstance().url),61613);
+				stompChat.subscribe(stompChatTopic);
+				stompChat.addEventListener(MessageEvent.MESSAGE, handleChatMessages);
+				
+			}
+			
+			private function onStage():void
+			{
+				stomp.connect(mx.utils.URLUtil.getServerName(BrowserManager.getInstance().url),61613);
+				stomp.subscribe(stompTopic);
+				stomp.addEventListener(MessageEvent.MESSAGE, handleMessages);
+			}
+			
+			private function outStage():void
+			{
+				stomp.unsubscribe(stompTopic);
+				stomp.disconnect();	
+			}
+			
+			private function handleMessages(event : MessageEvent) : void
+			{
+				if(event.message.body == 'update')
+				{
+					remoteComputers.getObjectByType(2);
+				}
+				else
+				{
+					var arr:Array = event.message.body.split(":");
+					var found:Boolean = false;
+					var i:int = 0;
+					for(i = 0; i < computers.length; i++)
+					{
+						if(computers.getItemAt(i).id == arr[1])
+						{
+							if(arr[0] == "open")
+								(computers.getItemAt(i) as CafeItem).hasOpenRequest = true;
+							else if(arr[0] == "close")
+								(computers.getItemAt(i) as CafeItem).status = 0;
+							else if(arr[0] == "changetime")
+								(computers.getItemAt(i) as CafeItem).endTime = new Number(arr[2]);
+							found = true;
+							break;
+						}
+					}
+					for(i = 0; !found && (i < gameControllers.length); i++)
+					{
+						if(gameControllers.getItemAt(i).id == arr[1])
+						{
+							if(arr[0] == "close")
+								(gameControllers.getItemAt(i) as CafeItem).status = 0;
+							
+							found = true;
+							break;
+						}
+					}
+					for(i = 0; !found && (i < tables.length); i++)
+					{
+						if(tables.getItemAt(i).id == arr[1])
+						{
+							if(arr[0] == "close")
+								(tables.getItemAt(i) as CafeItem).status = 0;
+							
+							found = true;
+							break;
+						}
+					}		
+				}
+			}
+			
+			private function handleChatMessages(event : MessageEvent) : void
+			{
+				var incomingMsg : XML = XML(event.message.body);
+				var from : String = String(incomingMsg.@from);
+				
+				switch (String(incomingMsg.@type))
+				{
+					case "chat":
+						from +=": ";
+						conversation.htmlText += from + String(incomingMsg) + "\n";
+						break;
+					
+					default:
+						trace('unknown message type');
+						break;
+				} 	
+			}
+			
+			private function doSend () : void
+			{
+				if(messageText.text.length > 0)
+				{
+					var chatMsg : XML =  <message type='chat' from='admin'>{messageText.text}</message>
+					stomp.send(stompChatTopic, chatMsg.toXMLString()); 
+					messageText.text='';
+				}
+			}
+			
+			private function addNewItem():void
+			{
+				var obj:CafeItem = new CafeItem();
+				obj.id = 0;
+				obj.version = 0;
+				obj.name = itemName.text;
+				obj.type = itemType.selectedIndex;
+				if(itemType.selectedIndex == 0)
+					remoteGameControllers.insert(obj);
+				else if(itemType.selectedIndex == 1)
+					remoteTables.insert(obj);
+			}
+			
+			private function tariffSelectionChange():void
+			{
+				var tariff:Tariff = tariffSelect.selectedItem as Tariff;
+				remoteItemTariffs.getObjectByObject(tariff);
+			}
+			
+			private function openTariffManagement():void
+			{
+				var tariffManagemet:TariffManagement = new TariffManagement();
+				tariffManagemet.sessionManagement = this;
+				PopUpManager.addPopUp(tariffManagemet, this, true);
+				PopUpManager.centerPopUp(tariffManagemet);
+			}
+			
+			private function computerDataReceived(event:RemoteDataObjectEvent):void
+			{
+				if(event.type == RemoteDataObjectEvent.DATA_RECEIVED)				
+					computers = remoteComputers.remoteData as ArrayCollection;
+				else if(event.type == RemoteDataObjectEvent.DATA_INSERTED) {
+					
+				}
+				else if(event.type == RemoteDataObjectEvent.DATA_UPDATED) {
+					
+				} 
+				else if(event.type == RemoteDataObjectEvent.DATA_DELETED) {
+					
+				}  
+			}
+			
+			private function gameConsoleDataReceived(event:RemoteDataObjectEvent):void
+			{	
+				var i:int = 0;
+				var cafeItem:CafeItem;
+				if(event.type == RemoteDataObjectEvent.DATA_RECEIVED)				
+					gameControllers = remoteGameControllers.remoteData as ArrayCollection;
+				else if(event.type == RemoteDataObjectEvent.DATA_INSERTED) {
+					gameControllers.addItem(remoteGameControllers.remoteReturnObject as CafeItem);
+				}
+				else if(event.type == RemoteDataObjectEvent.DATA_UPDATED) {
+					
+				} 
+				else if(event.type == RemoteDataObjectEvent.DATA_DELETED) {
+					cafeItem = remoteGameControllers.remoteReturnObject as CafeItem;
+					for (i = 0 ; i < gameControllers.length ; i++)
+						if(gameControllers.getItemAt(i).id == cafeItem.id)
+							break;
+					gameControllers.removeItemAt(i);					
+				}  
+			}
+			
+			private function tableDataReceived(event:RemoteDataObjectEvent):void
+			{	
+				var i:int = 0;
+				var cafeItem:CafeItem;			
+				if(event.type == RemoteDataObjectEvent.DATA_RECEIVED)				
+					tables = remoteTables.remoteData as ArrayCollection;
+				else if(event.type == RemoteDataObjectEvent.DATA_INSERTED) {
+					tables.addItem(remoteGameControllers.remoteReturnObject as CafeItem);
+				}
+				else if(event.type == RemoteDataObjectEvent.DATA_UPDATED) {
+					
+				} 
+				else if(event.type == RemoteDataObjectEvent.DATA_DELETED) {
+					cafeItem = remoteGameControllers.remoteReturnObject as CafeItem;
+					for (i = 0 ; i < tables.length ; i++)
+						if(tables.getItemAt(i).id == cafeItem.id)
+							break;
+					tables.removeItemAt(i);
+				}  
+			}
+			
+			private function tariffDataReceived(event:RemoteDataObjectEvent):void
+			{				
+				tariffs = remoteTariffs.remoteData as ArrayCollection;
+			}
+			
+			private function itemTariffDataReceived(event:RemoteDataObjectEvent):void
+			{				
+				itemTariffs = remoteItemTariffs.remoteData as ArrayCollection;
+				tariffItemGrid.dataProvider = itemTariffs;
+			}
+			
+			private function optionsDataReceived(event:RemoteDataObjectEvent):void
+			{				
+				options = (remoteOptions.remoteData as ArrayCollection).getItemAt(0) as Options;
+			}
+			
+			private function tariffCrossDragEnter(event:DragEvent):void {
+			    var obj:IUIComponent = IUIComponent(event.currentTarget);
+			    event.preventDefault();
+			    if((event.dragInitiator as TileList).id == "computerTile" ||
+			    	(event.dragInitiator as TileList).id == "gameControllerTile" ||
+			    	(event.dragInitiator as TileList).id == "tableTile")
+			    	DragManager.acceptDragDrop(obj);
+			}
+			
+			private function tariffDragDrop(event:DragEvent):void {
+				var i:int = 0;
+				var type:int = 0;
+				if (event.dragSource.hasFormat("items"))
+			    {		    	
+			    	var itemsArray:Array = event.dragSource.dataForFormat("items") as Array;
+		    		for(i = 0; i < itemsArray.length; i++) {
+		    			var cafeItem:CafeItem = itemsArray[i];
+		    			cafeItem.tariff = tariffSelect.selectedItem as Tariff;
+		    			itemTariffs.addItem(cafeItem);
+		    			remoteComputers.updateObject(cafeItem);
+		    			type = cafeItem.type;
+		    		}
+				}
+				switch(type) {
+					case 0:
+						remoteGameControllers.getObjectByType(0);
+						break;
+					case 1:
+						remoteTables.getObjectByType(1);
+						break;
+					default:
+						remoteComputers.getObjectByType(2);
+						break;
+				}
+				remoteItemTariffs.getObjectByObject(tariffSelect.selectedItem);
+				
+			}
+			
+			public function closeAllEvent(eventObj:CloseEvent):void
+			{
+			
+			   if(eventObj.detail==Alert.OK)
+			   {
+					if(lastCloseButtonId == gcCloseAll.id)
+					{
+						closeSessions(gameControllers);
+					}
+					else if(lastCloseButtonId == compCloseAll.id)
+					{
+						closeSessions(computers);
+					}
+					else if(lastCloseButtonId == tableCloseAll.id)
+					{
+						closeSessions(tables);
+					}
+					else if(lastCloseButtonId == closeAll.id)
+					{
+						closeAllSessions();	
+					}
+			   }
+			
+			}
+
+			private function closeSessions(arrCol:ArrayCollection):void
+			{
+				for each(var cafeItem:CafeItem in arrCol)
+				{
+					cafeItem.status = 0;
+				}
+			}
+			
+			private function closeAllSessions():void
+			{
+				for each(var cafeItem:CafeItem in computers)
+				{
+					cafeItem.status = 0;
+				}
+				for each(var cafeItem:CafeItem in tables)
+				{
+					cafeItem.status = 0;
+				}
+				for each(var cafeItem:CafeItem in gameControllers)
+				{
+					cafeItem.status = 0;
+				}
+			}
+			
+			private function lastCloseButton(buttonId:String):void
+			{
+				lastCloseButtonId = buttonId;
+				Alert.show(resourceManager.getString('resources','session.closeall.confirm'),
+					resourceManager.getString('resources','session.closeall.confirm.title'),Alert.OK|Alert.CANCEL,this,closeAllEvent,null,Alert.OK);
+			}
+			
+			private function changeRecoverPassword():void
+			{
+				var changeRecoverPass:ChangeRecoverPassword = new ChangeRecoverPassword();
+				changeRecoverPass.sessionManagement = this;
+				PopUpManager.addPopUp(changeRecoverPass, this, true);
+				PopUpManager.centerPopUp(changeRecoverPass);
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:HBox width="100%" height="100%">
+		<component:ResizableCanvas width="100%" height="100%"
+			horizontalCenter="0" verticalCenter="0" minWidth="10" 
+			maxWidth="250" backgroundColor="#EEEEEE" horizontalScrollPolicy="off"
+			verticalResizable="true" horizontalResizable="true">	
+			<mx:HBox width="100%" height="100%" horizontalAlign="left" horizontalScrollPolicy="off">
+				<mx:VBox width="240" height="100%" horizontalScrollPolicy="off">
+					<mx:TextArea width="100%" height="100%" id="conversation" />
+					<mx:HBox>
+						<mx:Form defaultButton="{sendMessage}">
+							<mx:FormItem label="{resourceManager.getString('resources','session.message')}">
+								<mx:TextArea width="150" height="80" id="messageText"/>
+							</mx:FormItem>
+							<mx:FormItem>
+								<mx:Button label="{resourceManager.getString('resources','session.sendmessage')}" id="sendMessage"
+									click="doSend()"/>
+							</mx:FormItem>
+						</mx:Form>
+					</mx:HBox>
+				</mx:VBox>
+			</mx:HBox>				
+		</component:ResizableCanvas>
+		<mx:VRule height="100%" />
+		<mx:VBox width="100%" height="100%" minWidth="700">
+			<mx:Accordion width="100%" height="100%" historyManagementEnabled="false"
+				id="ac">
+				<mx:VBox width="100%" height="100%" label="{resourceManager.getString('resources','session.computers')}">
+					<mx:HBox width="100%" paddingBottom="5" paddingLeft="10" paddingRight="10" paddingTop="10">
+						<mx:Button label="{resourceManager.getString('resources','session.closeall')}" id="compCloseAll"
+							 click="{lastCloseButton(compCloseAll.id); }"/>
+					</mx:HBox>
+					<mx:HRule width="100%"/>
+					<mx:TileList width="100%" dataProvider="{computers}" borderColor="0xFFFFFF"
+						dragEnabled="true" id="computerTile" allowMultipleSelection="false">
+						<mx:itemRenderer>
+							<mx:Component>
+								<sub:CafeItemViewer info="{data as CafeItem}" width="170" height="170"/>
+							</mx:Component>
+						</mx:itemRenderer>
+					</mx:TileList>
+				</mx:VBox>
+				<mx:VBox width="100%" height="100%" label="{resourceManager.getString('resources','session.gameconsoles')}">
+					<mx:HBox width="100%" paddingBottom="5" paddingLeft="10" paddingRight="10" paddingTop="10">
+						<mx:Button label="{resourceManager.getString('resources','session.closeall')}" id="gcCloseAll"
+							click="lastCloseButton(gcCloseAll.id);"/>
+					</mx:HBox>
+					<mx:HRule width="100%"/>
+					<mx:TileList width="100%" dataProvider="{gameControllers}" borderColor="0xFFFFFF"
+						id="gameControllerTile" dragEnabled="true" allowMultipleSelection="false">
+						<mx:itemRenderer>
+							<mx:Component>
+								<sub:CafeItemViewer info="{data as CafeItem}" width="170" height="170">
+									<mx:Script>
+										<![CDATA[
+											import com.medratech.bsse.model.CafeItem;
+										]]>
+									</mx:Script>
+								</sub:CafeItemViewer>
+							</mx:Component>
+						</mx:itemRenderer>
+					</mx:TileList>
+				</mx:VBox>
+				<mx:VBox width="100%" height="100%" label="{resourceManager.getString('resources','session.tables')}">
+					<mx:HBox width="100%" paddingBottom="5" paddingLeft="10" paddingRight="10" paddingTop="10">
+						<mx:Button label="{resourceManager.getString('resources','session.closeall')}" id="tableCloseAll" 
+							click="lastCloseButton(tableCloseAll.id);"/>
+					</mx:HBox>
+					<mx:HRule width="100%"/>
+					<mx:TileList width="100%" dataProvider="{tables}" borderColor="0xFFFFFF"
+						id="tableTile" dragEnabled="true" allowMultipleSelection="false">
+						<mx:itemRenderer>
+							<mx:Component>
+								<sub:CafeItemViewer info="{data as CafeItem}" width="170" height="170"/>
+							</mx:Component>
+						</mx:itemRenderer>
+					</mx:TileList>
+				</mx:VBox>
+			</mx:Accordion>
+		</mx:VBox>
+		<mx:VRule height="100%" />
+		<mx:Accordion width="250" height="100%" backgroundColor="0xFFFFFF" >
+			<!--
+			<mx:VBox width="100%" label="{resourceManager.getString('resources','session.dashboard.title')}">
+				<mx:HRule width="100%" />
+				<mx:HBox width="100%">
+					<mx:Label text="{resourceManager.getString('resources','session.dashboard.dailyusageuser')}" />
+					<mx:Label text="{dashboardData.dailyUserCount}" />
+				</mx:HBox>
+				<mx:HBox width="100%">
+					<mx:Label text="{resourceManager.getString('resources','session.dashboard.dailyusagemoney')}" />
+					<mx:Label text="{dashboardData.dailyMoney}" />
+				</mx:HBox>
+				<mx:HBox width="100%">
+					<mx:Label text="{resourceManager.getString('resources','session.dashboard.dailyusageminutes')}" />
+					<mx:Label text="{dashboardData.dailyMinute}" />
+				</mx:HBox>
+			</mx:VBox>
+			-->
+			<mx:VBox width="100%" label="{resourceManager.getString('resources','session.tariff.title')}"
+				horizontalAlign="center">
+				<mx:HRule width="100%" />
+				<mx:Button label="{resourceManager.getString('resources','session.managetariff')}" width="90%"
+					click="openTariffManagement()"/>
+				<mx:VBox width="100%" horizontalAlign="center">
+					<mx:Label text="{resourceManager.getString('resources','session.selecttariff')}" />
+					<mx:ComboBox id="tariffSelect" close="tariffSelectionChange()"
+						dataProvider="{tariffs}" labelField="name" selectedIndex="0"/>
+					<mx:DataGrid id="tariffItemGrid" width="90%" dataProvider="{itemTariffs}"					
+						dragEnter="tariffCrossDragEnter(event)" dragDrop="tariffDragDrop(event)">
+						<mx:columns>
+							<mx:DataGridColumn dataField="name" headerText="{resourceManager.getString('resources','session.itemname')}"/>
+						</mx:columns>
+					</mx:DataGrid>
+				</mx:VBox>
+			</mx:VBox>
+			<mx:VBox width="100%" label="{resourceManager.getString('resources','session.options.title')}" 
+				horizontalScrollPolicy="off" horizontalAlign="center">
+				<mx:HRule width="100%" />
+				<mx:Button label="{resourceManager.getString('resources','session.closeall')}" width="90%" id="closeAll"
+					click="lastCloseButton(closeAll.id);"/>
+				<!-- <mx:CheckBox label="{resourceManager.getString('resources','session.enablechat')}" id="enableChat" /> -->
+				<mx:CheckBox label="{resourceManager.getString('resources','session.openautomatically')}"
+					selected="{options.openSessionAutomatically}" change="remoteOptions.updateObject(options);" />
+				<mx:HRule width="100%" />
+				<mx:Button label="Change Recover Password" width="90%" id="recoverPassButton" click="changeRecoverPassword()" />
+				<mx:HRule width="100%" />
+				<mx:Image source="{options.screenSaverImage}" width="200" scaleContent="true" />
+				<mx:Button label="Change Screen Saver" />
+				<mx:HRule width="100%" />
+				<mx:Image source="{options.banner}" width="200" scaleContent="true" />
+				<mx:Button label="Change Banner" />
+			</mx:VBox>
+			<mx:VBox width="100%" label="{resourceManager.getString('resources','session.item.title')}">
+				<flexlib:AdvancedForm width="100%" height="100%" undoHistorySize="5" id="itemForm"
+					horizontalScrollPolicy="off" verticalScrollPolicy="off">
+					<mx:FormItem label="{resourceManager.getString('resources','session.item.name')}">
+						<mx:TextInput maxChars="20" id="itemName" width="90"/>
+					</mx:FormItem>
+					<mx:FormItem label="{resourceManager.getString('resources','session.item.type')}">
+						<mx:ComboBox id="itemType">
+							<mx:dataProvider>
+								<mx:Array>
+									<mx:String>{resourceManager.getString('resources','session.item.type.1')}</mx:String>
+									<mx:String>{resourceManager.getString('resources','session.item.type.2')}</mx:String>
+								</mx:Array>
+							</mx:dataProvider>
+						</mx:ComboBox>
+					</mx:FormItem>
+					<mx:FormItem>
+						<mx:Button label="{resourceManager.getString('resources','session.item.add')}" click="{addNewItem()}"/>
+						<mx:Button label="{resourceManager.getString('resources','session.item.reset')}" click="{itemForm.resetForm()}"/>
+					</mx:FormItem>
+				</flexlib:AdvancedForm>
+			</mx:VBox>
+		</mx:Accordion>
+	</mx:HBox>
+</mx:Canvas>

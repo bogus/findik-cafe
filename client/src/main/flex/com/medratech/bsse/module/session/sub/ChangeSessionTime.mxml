@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+	title="{resourceManager.getString('resources','cafeitem.editsession.title')}">
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ValidationResultEvent;
+			import mx.managers.PopUpManager;
+		
+			[Bindable]
+			public var cafeItemViewer:CafeItemViewer;
+		
+			private function changeTime():void
+			{
+				if(radio3.selected) {
+					if(minuteValidator.validate().type != ValidationResultEvent.VALID ||
+						hourValidator.validate().type != ValidationResultEvent.VALID)
+						return;
+				}
+				
+				if(radio1.selected)
+				 	cafeItemViewer.openSession(false, 0);
+				else if(radio2.selected)
+					cafeItemViewer.openSession(true, new Date().getTime() + (30 * 60 * 1000));
+				else if(radio3.selected)						
+					cafeItemViewer.openSession(true, new Date().getTime() + (new Number(minute) * 60 * 1000 + 
+							new Number(hour) * 60 * 60 * 1000));
+				
+				PopUpManager.removePopUp(this);
+			}
+			
+			private function close():void {
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox paddingBottom="5" paddingLeft="5" paddingRight="5" paddingTop="5">
+		<mx:RadioButtonGroup id="radioGroup1" />
+		<mx:RadioButton label="{resourceManager.getString('resources','cafeitem.editsession.removetime')}" 
+			groupName="radiogroup1" id="radio1" value="0" selected="true"/>
+		<mx:RadioButton label="{resourceManager.getString('resources','cafeitem.opensession.30mins')}" 
+			groupName="radiogroup1" id="radio2" value="1" />
+		<mx:RadioButton label="{resourceManager.getString('resources','cafeitem.opensession.specify')}" 
+			groupName="radiogroup1" id="radio3" value="2"/>
+		<mx:HBox paddingLeft="20" enabled="{radio3.selected}">
+			<mx:Label text="{resourceManager.getString('resources','cafeitem.opensession.time')}" />
+			<mx:Spacer width="40" />
+			<mx:TextInput text="00" width="30" maxChars="2" id="hour"/>
+			<mx:Label text=":" />
+			<mx:TextInput text="20" width="30" maxChars="2" id="minute"/>
+		</mx:HBox>
+	</mx:VBox>
+	<mx:ControlBar>
+		<mx:Button label="{resourceManager.getString('resources','cafeitem.editsession.title')}" click="changeTime()" />
+		<mx:Button label="{resourceManager.getString('resources','cafeitem.opensession.cancel')}" click="close()" />
+	</mx:ControlBar>
+	<mx:NumberValidator source="{hour}" property="text" required="false" minValue="0" maxValue="23" id="hourValidator"/>
+	<mx:NumberValidator source="{minute}" property="text" required="true" minValue="0" maxValue="59" id="minuteValidator"/>
+</mx:TitleWindow>

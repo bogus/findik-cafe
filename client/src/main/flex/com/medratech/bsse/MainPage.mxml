@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Copyright (C) 2010 Burak Oguz (barfan) <burak@medra.com.tr>
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  (at your option) any later version. 
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ 
+-->
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+	creationComplete="init()" xmlns:about="com.medratech.bsse.module.about.*" 
+	xmlns:session="com.medratech.bsse.module.session.*"
+	currentState="sessionManagement">
+<mx:Script>
+	<![CDATA[
+		import com.medratech.bsse.util.URLUtil;
+		import mx.rpc.events.ResultEvent;
+		import com.medratech.bsse.component.RemoteDataObject;
+		import mx.managers.PopUpManager;
+		import mx.events.ChildExistenceChangedEvent;
+		import com.medratech.bsse.util.SessionValues;
+		import com.medratech.bsse.util.CookieUtil;		
+		import mx.events.ResourceEvent;
+		import mx.events.MenuEvent;
+		import mx.controls.Alert;
+		import mx.core.Application;
+	    import mx.rpc.events.HeaderEvent;
+	   
+	    private var locales:Array = ['en_US', 'tr_TR'];
+	    [Embed(source="/assets/images/menu-icons/systemtop.png")]
+		public var icon1:Class;
+        [Embed(source="/assets/images/menu-icons/dashboard.png")]
+        public var icon2:Class;
+        [Embed(source="/assets/images/menu-icons/logout.png")]
+        public var icon3:Class;
+        [Embed(source="/assets/images/menu-icons/search.png")]
+		public var icon4:Class;
+        [Embed(source="/assets/images/menu-icons/files.png")]
+        public var icon5:Class;
+        [Embed(source="/assets/images/menu-icons/files.png")]
+        public var icon6:Class;
+        [Embed(source="/assets/images/menu-icons/network.png")]
+		public var icon7:Class;
+        [Embed(source="/assets/images/menu-icons/date.png")]
+        public var icon8:Class;
+        [Embed(source="/assets/images/menu-icons/acl.png")]
+        public var icon9:Class;
+        [Embed(source="/assets/images/menu-icons/acl.png")]
+		public var icon10:Class;
+        [Embed(source="/assets/images/menu-icons/preftop.png")]
+        public var icon11:Class;
+        [Embed(source="/assets/images/menu-icons/preferences.png")]
+        public var icon12:Class;
+        [Embed(source="/assets/images/menu-icons/logtop.png")]
+		public var icon13:Class;
+        [Embed(source="/assets/images/menu-icons/log.png")]
+        public var icon14:Class;
+        [Embed(source="/assets/images/menu-icons/logsearch.png")]
+        public var icon15:Class;
+        [Embed(source="/assets/images/menu-icons/database.png")]
+        public var icon16:Class;
+        [Embed(source="/assets/images/menu-icons/internet.png")] 
+        public var icon17:Class;
+	    [Embed(source="/assets/images/menu-icons/mime.png")]
+        public var icon18:Class;
+        [Embed(source="/assets/images/menu-icons/folder.png")]
+        public var icon19:Class;
+        [Embed(source="/assets/images/menu-icons/file_alert.png")]
+        public var icon20:Class;
+        [Embed(source="/assets/images/menu-icons/reload.png")]
+        public var icon21:Class;
+        [Embed(source="/assets/images/menu-icons/help.png")]
+        public var icon22:Class;
+        [Embed(source="/assets/images/menu-icons/mydlp.png")]
+        public var icon23:Class;
+        
+        private function init():void
+        {
+        		
+        }		
+         
+		private function menuHandler(event:MenuEvent):void
+		{	
+		   if(event.item.@actionState == "logout")
+		   		logout();
+		   else if(event.item.@actionState == "help")
+		   		URLUtil.openWindow('help/help.html', 'help', 'width=900,height=600,resizable=0, scrollbars=1, toolbar=1');
+		   else
+		   		currentState=event.item.@actionState;
+		   
+		}
+		
+		private function localeComboBox_initializeHandler(event:Event):void
+        {
+        	var cookieVal:String = CookieUtil.getCookie('fcafe-lang') as String;
+        	if(cookieVal != null && (locales.indexOf(cookieVal) != -1)) {
+        		localeComboBox.selectedIndex = locales.indexOf(cookieVal);
+        		resourceManager.localeChain = [ cookieVal ];
+        	}
+        	else
+            	localeComboBox.selectedIndex = locales.indexOf(resourceManager.localeChain[0]);
+        }
+ 
+        private function localeComboBox_changeHandler(event:Event):void
+        {
+            var newLocale:String = String(locales[localeComboBox.selectedIndex]);
+
+            if (resourceManager.getLocales().indexOf(newLocale) != -1)
+            {
+                completeHandler(null);
+            }
+            else
+            {
+                var resourceModuleURL:String = "Resources_" + newLocale + ".swf";
+                var eventDispatcher:IEventDispatcher = resourceManager.loadResourceModule(resourceModuleURL);
+                eventDispatcher.addEventListener(ResourceEvent.COMPLETE, completeHandler);
+            }
+        }
+
+        private function completeHandler(event:ResourceEvent):void
+        {
+        	var cookieVal:String = CookieUtil.getCookie('fcafe-lang') as String;
+        	if(cookieVal != null) {
+        		CookieUtil.deleteCookie('fcafe-lang');
+        	} 
+        	CookieUtil.setCookie('fcafe-lang',locales[localeComboBox.selectedIndex],365*2);
+            resourceManager.localeChain = [ locales[localeComboBox.selectedIndex] ];
+        }
+        
+        private function logout():void
+		{
+			var remoteDataObject:RemoteDataObject = new RemoteDataObject("Login", "loginService");
+			remoteDataObject.init();
+			remoteDataObject.getRemoteObject().userLogout.addEventListener(ResultEvent.RESULT, logoutListener);
+			remoteDataObject.getRemoteObject().userLogout();
+		}
+		
+		private function logoutListener(event:ResultEvent):void
+		{
+			SessionValues.authUserId = 0;
+			SessionValues.authUserName = "";
+			SessionValues.authUserRole = 3;
+			var ref:URLRequest = new URLRequest("javascript:location.reload(true)");
+			navigateToURL(ref, "_self");
+		}
+		
+		private function refreshData(event:ChildExistenceChangedEvent):void
+		{
+			
+		}
+	]]>
+</mx:Script>
+	<mx:states>
+		<mx:State name="sessionManagement">
+			<mx:AddChild relativeTo="{container}">
+				<session:SessionManagement id="sessionManagement" />
+			</mx:AddChild> 
+		</mx:State>
+		<mx:State name="about">
+			<mx:AddChild relativeTo="{container}">
+				<about:About id="aboutComp" x="{(this.width - aboutComp.width) / 2}" y="{(this.height - aboutComp.height) / 2}" />
+			</mx:AddChild> 
+		</mx:State>
+	</mx:states>
+	
+	<mx:Image id="logo" x="{this.width - logo.width - 20}" y="{this.height - logo.height - 20}" source="assets/images/minifndk.png" />
+	<mx:Canvas id="container" width="100%" height="100%" x="0" y="23" childAdd="refreshData(event)" />
+	  
+	
+	<mx:MenuBar x="0" y="0" width="100%" labelField="@label" id="menubar1" itemClick="menuHandler(event)" iconField="@icon">
+		<mx:XMLList>
+	        <menuitem label="{resourceManager.getString('resources', 'menu.system')}" icon="icon1">
+				<amenuitem label="{resourceManager.getString('resources', 'menu.dashboard')}" actionState="dashboard" icon="icon2"/>
+				<amenuitem label="{resourceManager.getString('resources', 'menu.importexport')}" actionState="importexport" icon="icon21"/>
+	            <amenuitem label="{resourceManager.getString('resources', 'menu.logout')}" actionState="logout" icon="icon3"/>
+	        </menuitem>
+	        <menuitem label="{resourceManager.getString('resources', 'menu.management')}" icon="icon9">
+	        	<bmenuitem label="{resourceManager.getString('resources', 'menu.management.session')}" actionState="sessionManagement" icon="icon10"/>
+	        </menuitem>
+	        <menuitem label="{resourceManager.getString('resources', 'menu.about')}" icon="icon23">
+	        	<gmenuitem label="{resourceManager.getString('resources', 'menu.about.help')}" actionState="help" icon="icon22"/>
+	        	<gmenuitem label="{resourceManager.getString('resources', 'menu.about.about')}" actionState="about" icon="icon23"/>
+	        </menuitem>
+	    </mx:XMLList>
+	</mx:MenuBar>
+	<mx:ComboBox id="localeComboBox" right="20"
+                 initialize="localeComboBox_initializeHandler(event)"
+                 change="localeComboBox_changeHandler(event)">
+         <mx:dataProvider> 
+			<mx:Array>
+				<mx:Object id="en_US" label="English" />
+				<mx:Object id="tr_TR" label="Türkçe" />
+			</mx:Array>
+		</mx:dataProvider>
+    </mx:ComboBox> 
+              
+</mx:Canvas>

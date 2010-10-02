@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:component="com.medratech.bsse.component.*"
+	xmlns:flexlib="flexlib.containers.*" layout="absolute" showCloseButton="true" creationComplete="init()"
+	title="{resourceManager.getString('resources','tariff.title')}" horizontalScrollPolicy="off" verticalScrollPolicy="off"
+	close="PopUpManager.removePopUp(this)">
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.events.ValidationResultEvent;
+			import mx.collections.IViewCursor;
+			import mx.managers.PopUpManager;
+			import mx.collections.ArrayCollection;
+			import com.medratech.bsse.model.Tariff;
+			import com.medratech.bsse.model.PriceList;
+			import mx.binding.utils.ChangeWatcher;
+			import com.medratech.bsse.module.session.SessionManagement;
+			
+			[Bindable]
+			public var sessionManagement:SessionManagement;
+			
+			private var priceDataProvider:ArrayCollection = new ArrayCollection();
+			private var selectedTariff:Tariff;
+			private var alert:Alert;
+			
+			private function init():void 
+			{
+				if(sessionManagement.tariffs.length > 0) {
+					tariffNames.selectedItem = sessionManagement.tariffs.getItemAt(0);
+					changePriceList();
+				} 
+			}
+			
+			private function addTariff():void
+			{
+				var tariff:Tariff = new Tariff();
+				tariff.name = tariffName.text;
+				tariff.prices = new ArrayCollection();
+				for(var i:int = 0; i < 7 ; i++)
+				{
+					for(var j:int = 0 ; j < 24 ; j++)
+					{
+						var priceList:PriceList = new PriceList();
+						priceList.day = i;
+						priceList.hour = j;
+						priceList.price = 1;
+						tariff.prices.addItem(priceList);
+					}
+				}
+				sessionManagement.tariffs.addItem(tariff);
+				sessionManagement.remoteTariffs.insert(tariff);
+				newTariffForm.resetForm();
+			}
+			
+			private function changePriceList():void
+			{
+				changeGridData(tariffNames.selectedItem as Tariff);
+				tariffMinimumBilling.selectedItem = selectedTariff.minBillTime;
+			}
+			
+			private function changeGridData(selectedTariff:Tariff):void
+			{
+				var i:int = 0;
+				var priceList:ArrayCollection = selectedTariff.prices;
+				priceDataProvider = new ArrayCollection();
+				var obj:Object = new Object();
+				this.selectedTariff = selectedTariff;
+				
+				for(i = 0; i < 24; i++)
+				{
+					obj = new Object();
+					obj.hour = i.toString() + ":00";
+					obj.mon = 0;
+					obj.tue = 0;
+					obj.wed = 0;
+					obj.thu = 0;
+					obj.fri = 0;
+					obj.sat = 0;
+					obj.sun = 0;
+					priceDataProvider.addItem(obj); 
+				}
+				
+				for each(var price:PriceList in priceList)
+				{
+					obj = priceDataProvider.getItemAt(price.hour);
+					switch(price.day)
+					{
+						case 0:
+							obj.mon = price.price;
+							break;
+						case 1:
+							obj.tue = price.price;
+							break;
+						case 2:
+							obj.wed = price.price;
+							break;
+						case 3:
+							obj.thu = price.price;
+							break;
+						case 4:
+							obj.fri = price.price;
+							break;	
+						case 5:
+							obj.sat = price.price;
+							break;
+						case 6:
+							obj.sun = price.price;
+							break;
+					}		
+				}
+				priceDataGrid.dataProvider = priceDataProvider;
+			}
+			
+			private function editPrice():void
+			{
+				if(priceValidator.validate().type == ValidationResultEvent.VALID)
+				{
+					updatePrices(new Number(price.text));
+				} 
+			}
+			
+			private function savePrice():void
+			{
+				//alert = Alert.show(resourceManager.getString("resources", "tariff.saving"));
+	    		//alert.mx_internal::alertForm.mx_internal::defaultButton.visible = false;
+
+				var i:int = 0;
+				var j:int = 0;
+				var priceList:ArrayCollection = selectedTariff.prices;
+				
+				for (j = 0; j < 7*24; j++)
+				{
+					var priceData:PriceList = priceList.getItemAt(j) as PriceList;
+					var obj:Object = priceDataProvider.getItemAt(priceData.hour);
+					switch(priceData.day)
+					{
+						case 0:
+							selectedTariff.prices.getItemAt(j).price = obj.mon;
+							break;
+						case 1:
+							selectedTariff.prices.getItemAt(j).price = obj.tue;
+							break;
+						case 2:
+							selectedTariff.prices.getItemAt(j).price = obj.wed;
+							break;
+						case 3:
+							selectedTariff.prices.getItemAt(j).price = obj.thu;
+							break;
+						case 4:
+							selectedTariff.prices.getItemAt(j).price = obj.fri;
+							break;
+						case 5:
+							selectedTariff.prices.getItemAt(j).price = obj.sat;
+							break;
+						case 6:
+							selectedTariff.prices.getItemAt(j).price = obj.sun;
+							break;	
+					}
+				}
+						
+				sessionManagement.remoteTariffs.updateObject(selectedTariff);
+				//PopUpManager.removePopUp(alert);
+
+			}
+			
+			public function updatePrices(price:Number):void
+			{
+				var n:int = priceDataGrid.selectedCells.length;
+	            for (var i:int = 0; i < n; i++)
+	            {
+	                var cell:Object = priceDataGrid.selectedCells[i];
+	              	var obj:Object = priceDataProvider.getItemAt(cell.rowIndex);
+	              	switch(cell.columnIndex) {
+	              		case 1:
+	              			priceDataProvider.getItemAt(cell.rowIndex).mon = price;
+	              			break;
+	              		case 2:
+	              			priceDataProvider.getItemAt(cell.rowIndex).tue = price;
+	              			break;
+	              		case 3:
+	              			priceDataProvider.getItemAt(cell.rowIndex).wed = price;
+	              			break;
+	              		case 4:
+	              			priceDataProvider.getItemAt(cell.rowIndex).thu = price;
+	              			break;
+	              		case 5:
+	              			priceDataProvider.getItemAt(cell.rowIndex).fri = price;
+	              			break;
+	              		case 6:
+	              			priceDataProvider.getItemAt(cell.rowIndex).sat = price;
+	              			break;
+	              		case 7:
+	              			priceDataProvider.getItemAt(cell.rowIndex).sun = price;
+	              			break;
+	              	}
+	            }
+	            priceDataGrid.dataProvider = priceDataProvider; 
+			}
+			
+			private function changeMinBill():void
+			{
+				selectedTariff.minBillTime = tariffMinimumBilling.selectedItem as Number;
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+		
+		<flexlib:AdvancedForm id="newTariffForm" defaultButton="{newTariffButton}">
+			<mx:HBox>
+				<mx:FormItem label="{resourceManager.getString('resources','tariff.title')}">
+					<mx:TextInput id="tariffName" maxChars="20" maxWidth="90" />
+				</mx:FormItem>
+				<mx:FormItem>
+					<mx:Button id="newTariffButton" label="{resourceManager.getString('resources','tariff.add')}" 
+						click="addTariff()" />	
+				</mx:FormItem>
+			</mx:HBox>
+		</flexlib:AdvancedForm>
+		<mx:HRule width="100%" />
+		<mx:HBox paddingLeft="10" paddingRight="5">
+			<mx:HBox>
+				<mx:Label text="{resourceManager.getString('resources','tariff.choose')}" />
+				<mx:ComboBox id="tariffNames" dataProvider="{sessionManagement.tariffs}" labelField="name" 
+					close="changePriceList()" />
+			</mx:HBox>
+			<mx:HBox width="100%" horizontalAlign="right">
+				<mx:Label text="{resourceManager.getString('resources','tariff.minimumbilling')}" />
+				<mx:ComboBox id="tariffMinimumBilling"  close="changeMinBill()" >
+					<mx:dataProvider>
+						<mx:Array>
+							<mx:Number>0</mx:Number>
+							<mx:Number>5</mx:Number>
+							<mx:Number>10</mx:Number>
+							<mx:Number>15</mx:Number>
+							<mx:Number>20</mx:Number>
+							<mx:Number>30</mx:Number>
+							<mx:Number>45</mx:Number>
+							<mx:Number>60</mx:Number>
+						</mx:Array>
+					</mx:dataProvider>
+				</mx:ComboBox>
+				<mx:Label text="{resourceManager.getString('resources','tariff.minutes')}" />
+			</mx:HBox>
+		</mx:HBox>
+		
+		<mx:AdvancedDataGrid editable="false" allowMultipleSelection="true" selectionMode="multipleCells" 
+			allowDragSelection="true" id="priceDataGrid" rowCount="25" dragEnabled="true">
+			<mx:columns>
+				<mx:AdvancedDataGridColumn headerText=" " dataField="hour" width="40" />
+				<mx:AdvancedDataGridColumn headerText="{resourceManager.getString('resources','tariff.day.mon')}" dataField="mon" />
+				<mx:AdvancedDataGridColumn headerText="{resourceManager.getString('resources','tariff.day.tue')}" dataField="tue" />
+				<mx:AdvancedDataGridColumn headerText="{resourceManager.getString('resources','tariff.day.wed')}" dataField="wed" />
+				<mx:AdvancedDataGridColumn headerText="{resourceManager.getString('resources','tariff.day.thu')}" dataField="thu" />
+				<mx:AdvancedDataGridColumn headerText="{resourceManager.getString('resources','tariff.day.fri')}" dataField="fri" />
+				<mx:AdvancedDataGridColumn headerText="{resourceManager.getString('resources','tariff.day.sat')}" dataField="sat" />
+				<mx:AdvancedDataGridColumn headerText="{resourceManager.getString('resources','tariff.day.sun')}" dataField="sun" />
+			</mx:columns>
+		</mx:AdvancedDataGrid>
+		<mx:HBox width="100%" paddingLeft="10" paddingRight="10" paddingBottom="10">
+			<mx:HBox width="50%" horizontalAlign="left">
+				<mx:TextInput width="90" maxChars="10" id="price"/>
+				<mx:Button label="{resourceManager.getString('resources','tariff.editprice')}" click="editPrice()" />
+			</mx:HBox>
+			<mx:HBox width="50%" horizontalAlign="right">
+				<mx:Button label="{resourceManager.getString('resources','tariff.save')}" click="savePrice()" />
+			</mx:HBox>		
+		</mx:HBox>
+		
+	</mx:VBox>
+	<mx:NumberValidator source="{price}" property="text" minValue="0.01" maxValue="1000" id="priceValidator" required="true"/>
+</mx:TitleWindow>

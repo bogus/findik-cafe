@@ -1,0 +1,8 @@
+This project is an update of the sample project described in the article
+I published on Adobe Developer Connection in June 2008.
+
+This version replaces SpringFactory with Spring BlazeDS Integration library.
+Plus it integrates basic security with Spring Security, and it has a one-to-many relationship.
+
+This project can be used to bootstrap Spring/Flex projects. That's why it's meant to remain
+as simple and generic as possible.

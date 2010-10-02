@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<services-config>
+  <services>
+    <service id="bsse-service" 
+    	class="flex.messaging.services.RemotingService" 
+    	messageTypes="flex.messaging.messages.RemotingMessage">
+      	<destination id="bsse-destination">
+			<channels>
+		  		<!-- <channel ref="bsse-secure-channel"/> -->
+		  		<channel ref="bsse-channel"/>
+			</channels>
+			<properties>
+		  		<source>*</source>
+			</properties>
+      	</destination>
+   	 </service>
+  </services>
+  <channels>
+  <!--
+    <channel-definition id="bsse-secure-channel" class="mx.messaging.channels.SecureAMFChannel">
+      <endpoint uri="https://{server.name}:{server.port}" class="flex.messaging.endpoints.SecureAMFEndpoint"/>
+    </channel-definition>
+   -->
+  	<channel-definition id="bsse-channel" class="mx.messaging.channels.AMFChannel">
+      <endpoint uri="http://localhost/" class="flex.messaging.endpoints.AMFEndpoint"/>
+    </channel-definition>
+  </channels>
+</services-config>

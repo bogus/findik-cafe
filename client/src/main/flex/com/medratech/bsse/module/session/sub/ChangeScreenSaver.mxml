@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+	title="{resourceManager.getString('resources','options.changess.title')}">
+	<mx:Script>
+		<![CDATA[
+			import com.medratech.bsse.module.session.SessionManagement;
+			import mx.graphics.codec.JPEGEncoder;
+			import mx.binding.utils.BindingUtils;
+			import mx.core.UIComponent;
+ 
+			import flash.net.FileReference;
+			import flash.net.FileFilter;
+			import flash.events.IOErrorEvent;
+			import flash.events.Event;
+			import flash.utils.ByteArray;
+ 
+			private var loadFileRef:FileReference;
+ 
+			private static const FILE_TYPES:Array = [new FileFilter("Image Files", "*.jpg;*.jpeg;*.gif;*.png;*.JPG;*.JPEG;*.GIF;*.PNG")];
+			private static const THUMB_WIDTH:uint = 200;
+			private static const THUMB_HEIGHT:uint = 150;
+ 
+ 			[Bindable]
+			public var sessionManagement:SessionManagement;
+ 		
+			private function loadFile():void {
+				loadFileRef = new FileReference();
+				loadFileRef.addEventListener(Event.SELECT, onFileSelect);
+				loadFileRef.browse();
+			}
+ 
+			private function saveFile():void {		
+				var bitmapData:BitmapData = new BitmapData(THUMB_WIDTH, THUMB_HEIGHT);
+				bitmapData.draw(imageView);
+ 
+				var encoder:JPEGEncoder = new JPEGEncoder();
+				var rawBytes:ByteArray = encoder.encode(bitmapData);
+ 
+ 				sessionManagement.options.screenSaverImage = rawBytes;
+ 				sessionManagement.remoteOptions.updateObject(sessionManagement.options);
+			}
+ 
+			private function onFileSelect(e:Event):void {
+				loadFileRef.addEventListener(Event.COMPLETE, onFileLoadComplete);
+				loadFileRef.load();
+			}
+ 
+			private function onFileLoadComplete(e:Event):void {
+			   	var loader:Loader = new Loader();
+			   	loader.contentLoaderInfo.addEventListener(Event.COMPLETE, onDataLoadComplete);
+			   	loader.loadBytes(loadFileRef.data);
+ 
+				loadFileRef = null;
+			}
+ 
+			private function onDataLoadComplete(e:Event):void {
+				var bitmapData:BitmapData = Bitmap(e.target.content).bitmapData;
+ 
+                var matrix:Matrix = new Matrix();
+                matrix.scale(THUMB_WIDTH/bitmapData.width, THUMB_HEIGHT/bitmapData.height);
+ 
+				imageView.graphics.clear();
+				imageView.graphics.beginBitmapFill(bitmapData, matrix, false); 
+				imageView.graphics.drawRect(0, 0, THUMB_WIDTH, THUMB_HEIGHT);
+				imageView.graphics.endFill(); 
+ 
+				saveButton.enabled = true;
+			}
+ 
+		]]>
+	</mx:Script>
+	
+	<mx:VBox>
+		<mx:Canvas id="imageView" width="240" height="180" borderThickness="1" borderColor="#CCCCCC" borderStyle="solid"/>
+		<mx:HBox paddingTop="5" borderThickness="1">
+			<mx:Button label="{resourceManager.getString('resources','options.changess.load')}" click="loadFile()"/>
+			<mx:Button label="{resourceManager.getString('resources','options.changess.save')}" click="saveFile()" id="saveButton" enabled="false"/>
+		</mx:HBox>
+	</mx:VBox>
+	<mx:ControlBar horizontalAlign="right">
+		<mx:Button label="{resourceManager.getString('resources','cafeitem.opensession.cancel')}" click="close()" />
+	</mx:ControlBar>
+
+</mx:TitleWindow>

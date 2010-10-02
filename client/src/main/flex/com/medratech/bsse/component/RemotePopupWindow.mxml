@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+	layout="absolute"
+	showCloseButton="true" 
+	close="PopUpManager.removePopUp(this)">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			
+			[Bindable]
+			public var dataGrid:RemoteDoubleClickDataGrid;
+			
+			protected function submit(obj:Object):void {
+				var arr:Array = new Array(1);
+				arr[0] = obj
+				dataGrid.insert(arr);
+			}
+			
+			protected function update(obj:Object):void {
+				dataGrid.updateData(obj);			
+			}
+		]]>
+	</mx:Script>
+	
+</mx:TitleWindow>

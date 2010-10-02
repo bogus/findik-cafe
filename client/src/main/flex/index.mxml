@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" 
+	xmlns:module="com.medratech.bsse.module.*"
+	width="100%" height="100%" xmlns:component="com.medratech.bsse.component.*"
+	creationComplete="init()" backgroundColor="0x333333"
+	preloader="com.medratech.bsse.component.preloader.PreloadProgressBar" xmlns:bsse="com.medratech.bsse.*">
+<mx:Style source="/assets/css/main.css"/>
+<mx:Metadata>
+	[ResourceBundle("resources")]    
+</mx:Metadata>
+<mx:states>
+	<mx:State name="loggedin">
+		<mx:RemoveChild target="{loginCanvas}"/>
+		<mx:AddChild position="lastChild"> 
+			<bsse:MainPage />
+		</mx:AddChild>
+	</mx:State>
+</mx:states> 
+<mx:Script> 
+  <![CDATA[
+  	import com.medratech.bsse.util.ModeCheck;
+  	import com.medratech.bsse.util.ExternalInterfaceUtil;
+  	import com.medratech.bsse.util.SessionValues;
+  	import mx.controls.Alert;
+  	import com.adobe.crypto.SHA1;
+  	import mx.rpc.events.ResultEvent;
+  	import com.medratech.bsse.component.RemoteDataObject;
+  	import com.medratech.bsse.util.RemoteDataObjectEvent; 
+  	import mx.controls.Image;
+  	
+  	[Bindable]
+	private var remoteDataObject:RemoteDataObject;
+	
+	[Bindable] 
+	private static var isDebug:Boolean = true;
+	
+	private function init() : void
+	{
+		ExternalInterfaceUtil.addExternalEventListener("window.onunload", handleLogout, "unloadFlex");
+		
+		if(isDebug)
+		{
+			currentState = 'loggedin';
+			SessionValues.authUserId = 1;
+			SessionValues.authUserRole = 0;
+		}
+		/*
+		remoteDataObject = new RemoteDataObject("Login","loginService");
+		remoteDataObject.init();
+		remoteDataObject.getRemoteObject().checkUser.addEventListener(ResultEvent.RESULT, loginListener);
+		*/
+		// 1. for crossdomain images, we need to create a LoaderContext object and set its checkPolicyFile to true.
+		var loaderContext : LoaderContext = new LoaderContext ();
+		loaderContext.checkPolicyFile = true;
+
+		// 2. assign that loaderContext object to an Image object
+		var image : Image =  new Image();
+		image.loaderContext =  loaderContext;
+
+		// 3. set source and load
+		image.source = "assets/images/grey.jpg"
+		//image.source = "http://alekkus.com/flex3/extra/images/duck.jpg";
+		image.addEventListener( Event.COMPLETE, onImageLoaded  );
+		image.load();
+	}
+	
+	private function handleLogout():void
+	{
+		remoteDataObject.getRemoteObject().userLogout();
+	}
+ 
+	private function onImageLoaded( event : Event ) : void
+	{
+		var image : Image = Image( event.currentTarget );
+
+		// 1. set as tile image background
+		cvsMain.setTileImage( image );
+	} 
+
+	private function dataReceived(event:RemoteDataObjectEvent):void {	
+
+	}
+			
+	private function login():void
+	{
+		  remoteDataObject.getRemoteObject().checkUser(username.text, SHA1.hash(password.text));
+	} 
+	
+	private function loginListener(event:ResultEvent):void
+	{
+		var obj:Object = event.result;
+		SessionValues.authUserId = obj.id;
+		SessionValues.authUserName = obj.username;
+		SessionValues.authUserRole = obj.type;
+		if(obj.id == 0)
+			Alert.show(resourceManager.getString('resources','login.notvalid'));
+		else
+			currentState = "loggedin";
+	}
+		
+  ]]>
+</mx:Script>
+<component:TileImageCanvas id="cvsMain" width="100%" height="100%" /> 
+
+<mx:Canvas id="loginCanvas" x="0" y="0" width="100%" height="100%">
+	<mx:Panel x="330" y="95" width="250" height="136" layout="absolute" titleIcon="@Embed('/assets/images/icons/16x16/lock.png')" 
+		title="{resourceManager.getString('resources','login.title')}" 
+		id="login_panel" defaultButton="{loginButton}">
+		<mx:Text x="10" y="10" text="{resourceManager.getString('resources','login.username')}"/>
+		<mx:Text x="10" y="36" text="{resourceManager.getString('resources','login.password')}"/>
+		<mx:TextInput x="80" y="8" width="140" id="username"/>
+		<mx:TextInput x="80" y="34" width="140" id="password" displayAsPassword="true"/>
+		<mx:Button x="113" y="64" label="{resourceManager.getString('resources','login.submit')}"
+			 icon="@Embed('/assets/images/icons/16x16/ok.png')" click="login();" id="loginButton"/>
+	</mx:Panel>
+</mx:Canvas>
+
+<mx:StringValidator source="{username}" property="text" maxLength="32" required="true" id="usernameValidator"/>
+<mx:StringValidator source="{password}" minLength="4" maxLength="32" property="text" required="true" id="passwordValidator"/>
+ 
+</mx:Application>

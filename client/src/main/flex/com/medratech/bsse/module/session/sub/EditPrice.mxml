@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute"
+	showCloseButton="true" close="PopUpManager.removePopUp(this)"
+	title="{resourceManager.getString('resources','tariff.editprice')}">
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ValidationResultEvent;
+			import mx.managers.PopUpManager;
+			
+			[Bindable]
+			public var tariffManagement:TariffManagement;
+			
+			private function save():void
+			{
+				if(priceValidator.validate().type == ValidationResultEvent.VALID)
+				{
+					tariffManagement.updatePrices(new Number(price.text));
+					PopUpManager.removePopUp(this);
+				} 
+			}
+		]]>
+	</mx:Script>
+	<mx:HBox>
+		<mx:TextInput width="90" maxChars="10" id="price"/>
+		<mx:Button label="{resourceManager.getString('resources','tariff.editprice.save')}" click="save" />
+	</mx:HBox>
+	<mx:NumberValidator source="price" property="text" minValue="0.01" maxValue="1000" id="priceValidator" required="true"/>
+</mx:TitleWindow>

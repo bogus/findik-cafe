@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:jee="http://www.springframework.org/schema/jee"
+       xmlns:security="http://www.springframework.org/schema/security"
+       xmlns:amq="http://activemq.apache.org/schema/core"
+       xmlns:jms="http://www.springframework.org/schema/jms"
+       xsi:schemaLocation="
+                  http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+                  http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd
+                  http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+                  http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd
+                  http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-2.5.xsd
+                  http://www.springframework.org/schema/security
+                  http://www.springframework.org/schema/security/spring-security-2.0.4.xsd
+                  http://activemq.apache.org/schema/core  http://activemq.apache.org/schema/core/activemq-core-5.2.0.xsd
+                  http://www.springframework.org/schema/jms http://www.springframework.org/schema/jms/spring-jms-2.5.xsd">
+
+    <context:annotation-config/>
+    <context:component-scan base-package="com.medratech.findik"/>
+    <context:property-placeholder location="classpath:jdbc.properties"/>
+
+    <!-- MQ Configuration Start -->
+    <amq:broker useJmx="true"  persistent="false">
+        <amq:managementContext>
+            <amq:managementContext createConnector="true" />
+        </amq:managementContext>
+        <amq:transportConnectors>
+            <amq:transportConnector uri="tcp://0.0.0.0:61616" />
+            <amq:transportConnector uri="stomp://0.0.0.0:61613" />
+        </amq:transportConnectors>
+    </amq:broker>
+
+    <!--  ActiveMQ destinations to use  -->
+    <amq:queue id="destination"  physicalName="org.apache.activemq.spring.Test.spring.embedded"/>
+
+    <!-- JMS ConnectionFactory to use, configuring the embedded broker using XML -->
+    <!-- <amq:connectionFactory id="jmsFactory" brokerURL="vm://localhost"/> -->
+    <amq:connectionFactory id="jmsFactory" brokerURL="tcp://localhost:61616"/>
+
+    <!-- CachingConnectionFactory Definition, sessionCacheSize property is the number of sessions to cache -->
+    <bean id="connectionFactory" class="org.springframework.jms.connection.CachingConnectionFactory">
+        <constructor-arg ref="jmsFactory" />
+        <property name="exceptionListener" ref="jmsExceptionListener" />
+        <property name="sessionCacheSize" value="100" />
+    </bean>
+    <!-- JmsTemplate Definition -->
+    <bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate">
+        <constructor-arg ref="connectionFactory"/>
+    </bean>
+    <!-- listener container definition using the jms namespace, concurrency is the max number of concurrent listeners that can be started -->
+    <jms:listener-container concurrency="10" >
+        <jms:listener id="QueueListener" destination="Queue.Server" ref="queueListener" />
+    </jms:listener-container>
+    <!-- MQ Configuration End -->
+    
+    <bean id="myEmf" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="persistenceUnitName" value="findik-cafe"/>
+        <property name="jpaVendorAdapter" ref="jpaAdapter"/>
+        <property name="loadTimeWeaver">
+            <bean class="org.springframework.instrument.classloading.InstrumentationLoadTimeWeaver" />
+        </property>
+    </bean>
+
+    <bean id="jpaAdapter" class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+        <property name="database" value="${jpa.database}" />
+        <property name="showSql" value="${jpa.showSql}" />
+        <property name="generateDdl" value="${jpa.generateSchema}" />
+    </bean>
+
+    <!-- Datasource -->
+    <bean id="dataSource"
+          class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName" value="${jdbc.driverClassName}"/>
+        <property name="url" value="${jdbc.url}"/>
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+    </bean>
+
+    <!-- ========================= TRANSACTION MANAGEMENT ========================= -->
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+
+    <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
+        <property name="entityManagerFactory" ref="myEmf"/>
+    </bean>
+
+    <!-- Scheduling -->
+    <!--
+    <bean id="sessionScheduleJob" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+            <property name="targetObject" ref="sessionSchedule" />
+            <property name="targetMethod" value="checkTimeoutSessions" />
+    </bean>
+    <bean id="simpleTrigger" class="org.springframework.scheduling.quartz.SimpleTriggerBean">
+        <property name="jobDetail" ref="sessionScheduleJob" />
+        <property name="repeatInterval" value="60000" />
+        <property name="startDelay" value="60000" />
+    </bean>
+    -->
+    <bean name="jobDetail" class="org.springframework.scheduling.quartz.JobDetailBean">
+        <property name="jobClass" value="com.medratech.utils.schedule.SessionSchedular" />
+    </bean>
+    <bean id="jobDetailTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+        <property name="jobDetail" ref="jobDetail" />
+        <property name="cronExpression" value="0 0/1 * * * ?" />
+    </bean>
+    <bean id="schedulerFactoryBean" class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+        <property name="triggers">
+            <list>
+                <ref bean="jobDetailTrigger" />
+            </list>
+        </property>
+    </bean>
+
+</beans>

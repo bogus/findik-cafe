@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Module xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" width="102" height="26"
+	creationComplete="init()">
+	<mx:Script>
+        <![CDATA[
+        /*Copyright (c) 2007 Wheeler Street Design LLC
+        
+        Permission is hereby granted, free of charge, to any person
+        obtaining a copy of this software and associated documentation
+        files (the "Software"), to deal in the Software without
+        restriction, including without limitation the rights to use,
+        copy, modify, merge, publish, distribute, sublicense, and/or sell
+        copies of the Software, and to permit persons to whom the
+        Software is furnished to do so, subject to the following
+        conditions:
+        
+        The above copyright notice and this permission notice shall be
+        included in all copies or substantial portions of the Software.
+        
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+        EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+        OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+        NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+        HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+        WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+        FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+        OTHER DEALINGS IN THE SOFTWARE.
+        
+        @author Dave Held
+        @email dave@wheelerstreet.com
+        @web http://www.wheelerstreet.com
+        @reference http://livedocs.adobe.com/flex/2/langref/mx/formatters/DateFormatter.html
+        
+        */
+        ]]>
+    </mx:Script>
+    
+    <mx:Script>
+        <![CDATA[
+            
+            import mx.formatters.DateFormatter;
+    
+            [Bindable]
+            public var aTime:Array = new Array ;
+            
+            private var tiInterval:int = 5;
+            
+            public function init():void
+            {
+                //--- set interval and clock format values by the form
+                var iInterval:int = tiInterval;
+                
+                //--- build time array
+                this.aTime = getHourIntervalArray(iInterval) ;
+                //--- set selected index of the combo box to the middle value (ie, noon)
+                this.cmbTime.selectedIndex = Math.round(this.aTime.length / 2) ;
+            }
+            
+            /**
+             * format time intervals into hour or hour subsets
+             * 
+             * @param int iIncrement     - number of minutes per increment     - default: 30
+             * @param Boolean b12         - 12 hour format for time display     - default: true
+             * 
+             * @return Array
+             */
+            public function getHourIntervalArray(iIncrement:int = 30):Array
+            {
+                var millisecondsPerMinute:int    = 1000 * 60 ;
+                var millisecondsPerHour:int        = 1000 * 60 * 60 ;
+                
+                var df:DateFormatter = new DateFormatter ;
+                
+                //--- return array
+                var a:Array = new Array ;
+    
+                //--- set increment minutes to a default of 30 min unless another whole number divisor of 60 has been passed
+                var iInc:int = iIncrement <= 0 || (60 % iIncrement != 0) ? 30 : iIncrement ;
+    
+                var iIncCount:int = 60 / iInc ;
+                var sTime:String = '' ;
+    
+                var iMinutes:int = 0 ;
+                var iSeconds:int = 0 ;
+    
+                var d:Date = new Date() ;
+                
+                var nTimeInMilliseconds:Number = 0 ;
+                var oTime:Object = {} ;
+    
+                //--- set function with local scope to build and add intervals to the return array
+                var addHourInterval:Function = function():void
+                {
+                    //--- create a formatted date object for each hour (dummy date entered, all we care about it the time portion)
+                    d = new Date(76, 12, 11, iHours, iMinutes, iSeconds, 0) ;
+                    
+                    //--- format each increment as a string
+                    sTime = df.format(d) ; 
+                    
+                    //--- set object attributes
+                    nTimeInMilliseconds = d.getHours() * millisecondsPerHour + d.getMinutes() * millisecondsPerMinute ;
+                    oTime = {'label':sTime,"data":nTimeInMilliseconds} ;
+    
+                    //--- add each object to the return array
+                    a.push(oTime) ;
+    
+                    //--- reset minutes for outer loop
+                    iMinutes = 0 ;
+                }
+    
+                //--- iterate 24 hours
+                for(var iHours:int = 0;iHours<24;iHours++)
+                {
+                    
+                    df.formatString = "JJ:NN" ;
+    
+                    addHourInterval() ;
+    
+                     //--- iterate minute increments for each hour if they exist
+                    if(iIncCount > 1)
+                    {
+                        for(var j:int=1;j<iIncCount;j++)
+                        {
+                            //--- set minutes by increment and count
+                            iMinutes = j * iInc ;
+    
+                            addHourInterval() ;
+                        }
+                    }
+                }
+                return a ;
+            }
+            
+        ]]>
+    </mx:Script>
+    <mx:ComboBox id="cmbTime" dataProvider="{this.aTime}" labelField="label"/>
+</mx:Module>
