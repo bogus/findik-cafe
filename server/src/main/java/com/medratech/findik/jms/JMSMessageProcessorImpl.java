@@ -6,10 +6,12 @@
 package com.medratech.findik.jms;
 
 import com.medratech.findik.dao.CafeItemDao;
+import com.medratech.findik.dao.OptionsDao;
 import com.medratech.findik.dao.SessionDataDao;
 import com.medratech.findik.dao.TariffDao;
 import com.medratech.findik.dao.jpa.CafeItemDaoImpl;
 import com.medratech.findik.domain.CafeItem;
+import com.medratech.findik.domain.Options;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -36,7 +38,15 @@ public class JMSMessageProcessorImpl implements JMSMessageProcessor {
     protected TariffDao tItemDao;
 
     @Autowired
+    protected OptionsDao oItemDao;
+
+    @Autowired
     protected SessionDataDao sItemDao;
+
+    @Autowired
+    private QueueSender queueSender;
+
+    private static String queueName = "Queue.Client";
 
     public void routeMessages(String text)
     {
@@ -63,9 +73,23 @@ public class JMSMessageProcessorImpl implements JMSMessageProcessor {
                     }
                     else {
                         cafeItem = list.get(0);
-                        cafeItem.setHasOpenRequest(Boolean.TRUE);
-                        itemDao.update(cafeItem);
-                        sendStompMessage("open:"+cafeItem.getId());
+                        List<Options> optionses = oItemDao.findAll();
+                        if(optionses.size() > 0 && optionses.get(0).getOpenSessionAutomatically())
+                        {
+                            cafeItem.setStatus(1);
+                            cafeItem.setEndTime(new Long(0));
+                            cafeItem.setStartTime(System.currentTimeMillis());
+                            cafeItem.setHasOpenRequest(false);
+                            itemDao.update(cafeItem);
+                            queueSender.send(queueName, "session:open:"+cafeItem.getGeneratedId());
+                            sendStompMessage("update:comp");
+                        }
+                        else
+                        {
+                            cafeItem.setHasOpenRequest(Boolean.TRUE);
+                            itemDao.update(cafeItem);
+                            sendStompMessage("open:"+cafeItem.getId());
+                        }
                     }
                 } catch (NullPointerException ex) {
                 } catch (Exception ex) {
