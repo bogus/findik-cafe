@@ -15,7 +15,6 @@ package com.medratech.bsse.model
 	    public var IP:String;
 	    public var hostname:String;
 	    public var tariff:Tariff;
-	    public var sessionData:ArrayCollection;
 	    public var status:int;
 	    public var startTime:Number;
 	    public var endTime:Number;

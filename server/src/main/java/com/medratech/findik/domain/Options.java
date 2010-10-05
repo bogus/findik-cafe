@@ -1,15 +1,23 @@
 package com.medratech.findik.domain;
 
+import javax.persistence.Basic;
+import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.Lob;
 
 @Entity
 public class Options extends Model{
 	
     private Boolean openSessionAutomatically = false;
     private String recoverPassword = "findik";
+    @Lob @Basic(fetch=FetchType.EAGER)
+    @Column(columnDefinition="LONGBLOB NULL")
     private byte[] screenSaverImage;
+    @Lob @Basic(fetch=FetchType.EAGER)
+    @Column(columnDefinition="LONGBLOB NULL")
     private byte[] banner;
 
     public byte[] getBanner() {

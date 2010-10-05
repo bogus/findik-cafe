@@ -14,5 +14,5 @@ import org.springframework.stereotype.Repository;
  *
  * @author Administrator
  */
-@Repository
+@Repository("cafeItemDaoImpl")
 public class CafeItemDaoImpl extends BaseDaoImpl<CafeItem, Long> implements CafeItemDao{}

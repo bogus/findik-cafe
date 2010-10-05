@@ -19,6 +19,6 @@ public interface BaseService<T>
         public List<T> getData();
         public T insertData(T data);
         public T updateData(T data);
-        public T removeData(T data);
+        public T deleteData(T data);
 }
 

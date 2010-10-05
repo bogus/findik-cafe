@@ -11,12 +11,26 @@
 			[Bindable]
 			public var cafeItemViewer:CafeItemViewer;
 		
+			[Bindable]
+			private var totalIncome:Number = 0;
+			
+			private static var GMTTimeDifference:Number = 120*60*1000;
+		
 			private function close():void {
 				PopUpManager.removePopUp(this);
 			}
 			
 			private function date_labelFunc(item:Object, column:DataGridColumn):String {
-                return dateFormatter.format(item.eventData);
+                return dateFormatter.format(new Date(item.eventStartTime));
+            }
+            
+            private function date_labelFunc2(item:Object, column:DataGridColumn):String {
+                return dateFormatter.format(new Date(item.eventEndTime));
+            }
+            
+            private function bill_labelFunc(item:Object, column:DataGridColumn):String {
+            	totalIncome += new Number(item.eventData);
+                return item.eventData.toString();
             }
 
 		]]>
@@ -40,20 +54,28 @@
 			<mx:FormItem visible="{cafeItemViewer.info.type == 2}" label="Hostname">
 				<mx:Label text="{cafeItemViewer.info.hostname}" />
 			</mx:FormItem>
+			<mx:FormItem label="{resourceManager.getString('resources','session.history.total')}">
+				<mx:Label text="{numberFormatter.format(totalIncome)}" />
+			</mx:FormItem>
 		</mx:Form>
 		<component:RemoteDoubleClickDataGrid editable="false" id="sessionDataGrid"
 			remoteDestination="sessionDataService" 
 			creationComplete="{sessionDataGrid.init(); sessionDataGrid.changeSelectedCategory(cafeItemViewer.info.id);}">
 			<component:columns>
-				<mx:DataGridColumn dataField="eventStartTime" headerText="{resourceManager.getString('resources','cafeitem.info.dg.starttime')}" labelFunction="date_labelFunc" />
-				<mx:DataGridColumn dataField="eventEndTime" headerText="{resourceManager.getString('resources','cafeitem.info.dg.endtime')}" labelFunction="date_labelFunc"/>
-				<mx:DataGridColumn dataField="eventData" headerText="{resourceManager.getString('resources','cafeitem.info.dg.bill')}"/>
+				<mx:DataGridColumn dataField="eventStartTime" headerText="{resourceManager.getString('resources','cafeitem.info.dg.starttime')}"
+					width="150" labelFunction="date_labelFunc"/>
+				<mx:DataGridColumn dataField="eventEndTime" headerText="{resourceManager.getString('resources','cafeitem.info.dg.endtime')}" 
+					width="150" labelFunction="date_labelFunc2"/>
+				<mx:DataGridColumn dataField="eventData" headerText="{resourceManager.getString('resources','cafeitem.info.dg.bill')}" 
+					labelFunction="bill_labelFunc"/>
 			</component:columns>
 		</component:RemoteDoubleClickDataGrid> 
 	</mx:VBox>
 	<mx:ControlBar horizontalAlign="right">
 		<mx:Button label="{resourceManager.getString('resources','cafeitem.info.close')}" click="close()" />
 	</mx:ControlBar>
-	
 	<mx:DateFormatter id="dateFormatter" formatString="DD/MM/YYYY JJ:NN" />
+	<mx:NumberFormatter id="numberFormatter"
+            precision="2" rounding="up"/>
+
 </mx:TitleWindow>

@@ -34,6 +34,11 @@ public class OptionsServiceImpl implements OptionsService
     @Autowired
     protected OptionsDao itemDao;
 
+    @Autowired
+    private QueueSender queueSender;
+
+    private static String queueName = "Queue.Client";
+
     public List<Options> getData() {
         try {
             if(itemDao.findAll().size() == 0)
@@ -52,18 +57,26 @@ public class OptionsServiceImpl implements OptionsService
         return data;
     }
 
-    public Options removeData(Options data) {
+    public Options deleteData(Options data) {
         return data;
     }
 
     public Options updateData(Options data) {
-        Options options = itemDao.findById(data.getId());
-        options.setBanner(data.getBanner());
-        options.setOpenSessionAutomatically(data.getOpenSessionAutomatically());
-        options.setRecoverPassword(data.getRecoverPassword());
-        options.setScreenSaverImage(data.getScreenSaverImage());
-        itemDao.update(options);
-        return options;
+        try {
+            Options options = itemDao.findById(data.getId());
+            options.setBanner(data.getBanner());
+            options.setOpenSessionAutomatically(data.getOpenSessionAutomatically());
+            options.setRecoverPassword(data.getRecoverPassword());
+            options.setScreenSaverImage(data.getScreenSaverImage());
+            options.setBanner(data.getBanner());
+            itemDao.update(options);
+            queueSender.send(queueName, "util:recoverpass:"+options.getRecoverPassword());
+            queueSender.send(queueName, "util:screensaver:"+options.getScreenSaverImage().toString());
+            queueSender.send(queueName, "util:banner:"+options.getBanner().toString());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return data;
     }
 
 }

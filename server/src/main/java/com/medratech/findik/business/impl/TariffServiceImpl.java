@@ -6,10 +6,13 @@
 package com.medratech.findik.business.impl;
 
 import com.medratech.findik.business.*;
+import com.medratech.findik.dao.CafeItemDao;
 import com.medratech.findik.dao.PriceListDao;
 import com.medratech.findik.dao.TariffDao;
+import com.medratech.findik.domain.CafeItem;
 import com.medratech.findik.domain.PriceList;
 import com.medratech.findik.domain.Tariff;
+import com.medratech.findik.jms.JMSMessageProcessor;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +32,13 @@ public class TariffServiceImpl implements TariffService
     protected TariffDao itemDao;
 
     @Autowired
+    protected CafeItemDao cItemDao;
+
+    @Autowired
     protected PriceListDao pItemDao;
+
+    @Autowired
+    private JMSMessageProcessor jMSMessageProcessor;
 
     public List<Tariff> getData() {
         return itemDao.findAll();
@@ -53,8 +62,24 @@ public class TariffServiceImpl implements TariffService
         return tariff;
     }
 
-    public Tariff removeData(Tariff data) {
+    public Tariff deleteData(Tariff data) {
         Tariff tariff = itemDao.findById(data.getId());
+        Tariff tariff2 = itemDao.findAll().get(0);
+        try {
+            Boolean isUpdated = false;
+            List<CafeItem> cafeItems = cItemDao.findByQuery("select c from CafeItem "
+                    + "c where tariff_id="+data.getId().toString());
+            for(CafeItem cafeItem : cafeItems )
+            {
+                cafeItem.setTariff(tariff2);
+                cItemDao.update(cafeItem);
+                isUpdated = true;
+            }
+            if(isUpdated)
+                jMSMessageProcessor.sendStompMessage("update:all");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         itemDao.remove(tariff);
         return tariff;
     }

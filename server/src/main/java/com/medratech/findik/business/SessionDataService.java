@@ -17,4 +17,5 @@ import java.util.List;
  */
 public interface SessionDataService extends BaseService<SessionData> {
     public List<SessionData> getData(long type);
+    public List<SessionData> getData(long date, boolean isDate);
 }

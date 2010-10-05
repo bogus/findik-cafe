@@ -14,7 +14,7 @@ public class Tariff extends Model {
     @OneToMany(cascade=CascadeType.ALL)
     private List<PriceList> prices;
     private Integer minBillTime = 30;
-    @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER)
+    @OneToMany(cascade=CascadeType.MERGE, fetch=FetchType.EAGER)
     private List<CafeItem> cafeItem;
 
     public String getName() {

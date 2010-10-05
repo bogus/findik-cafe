@@ -26,7 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
  * @author Administrator
  */
 @Transactional
-@Service
+@Service("jMSMessageProcessorImpl")
 public class JMSMessageProcessorImpl implements JMSMessageProcessor {
 
     @Autowired
@@ -148,7 +148,7 @@ public class JMSMessageProcessorImpl implements JMSMessageProcessor {
                         }
                         if(isUpdated) {
                             itemDao.update(cafeItem);
-                            sendStompMessage("update");
+                            sendStompMessage("update:comp");
                         }
                     }
                 } catch (NullPointerException ex) {

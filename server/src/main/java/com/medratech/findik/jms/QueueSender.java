@@ -13,7 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Component;
 
-@Component
+@Component("queueSender")
 public class QueueSender
 {
     private final JmsTemplate jmsTemplate;

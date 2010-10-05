@@ -41,15 +41,20 @@ public class SessionDataServiceImpl implements SessionDataService
     }
 
     public List<SessionData> getData(long id) {
-        CafeItem cafeItem = cItemDao.findById(id);
-        return cafeItem.getSessionData();
+        return itemDao.findByQuery("select s from SessionData s where cafeItemId="+new Long(id).toString());
+    }
+
+    public List<SessionData> getData(long date, boolean isDate) {
+        return itemDao.findByQuery("select s from SessionData s where s.eventStartTime > "
+                + new Long(date).toString() + " and s.eventEndTime < " + new Long(date + (24*60*60*1000)).toString()
+                + " and s.eventEndTime <> 0");
     }
 
     public SessionData insertData(SessionData data) {
         return data;
     }
 
-    public SessionData removeData(SessionData data) {
+    public SessionData deleteData(SessionData data) {
         return data;
     }
 

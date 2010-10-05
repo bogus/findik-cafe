@@ -15,6 +15,8 @@ import com.medratech.findik.domain.Tariff;
 import com.medratech.findik.jms.QueueSender;
 import java.util.ArrayList;
 import java.util.List;
+import javax.persistence.PersistenceContext;
+import javax.persistence.PersistenceContextType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.flex.remoting.RemotingDestination;
 import org.springframework.stereotype.Service;
@@ -71,7 +73,7 @@ public class CafeItemServiceImpl implements CafeItemService
         return data;
     }
 
-    public CafeItem removeData(CafeItem data) {
+    public CafeItem deleteData(CafeItem data) {
         CafeItem cafeItem = itemDao.findById(data.getId());
         itemDao.remove(cafeItem);
         return data;
@@ -98,15 +100,8 @@ public class CafeItemServiceImpl implements CafeItemService
                 sessionData.setEventEndTime(System.currentTimeMillis());
                 sessionData.setEventStartTime(cafeItem.getStartTime());
                 sessionData.setEventData(data.getBill().toString());
-
-                try {
-                    List<SessionData> sessionDataList = cafeItem.getSessionData();
-                    if(sessionData == null)
-                        sessionDataList = new ArrayList<SessionData>();
-                    sessionDataList.add(sessionData);
-                    cafeItem.setSessionData(sessionDataList);
-                } catch (NullPointerException e) {
-                }
+                sessionData.setCafeItemId(cafeItem.getId());
+                sItemDao.persist(sessionData);
             }
         }
         if(cafeItem.getStartTime() != data.getStartTime())

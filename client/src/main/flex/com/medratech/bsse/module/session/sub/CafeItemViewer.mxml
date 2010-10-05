@@ -4,6 +4,7 @@
 	creationComplete="init()" removedFromStage="removed()" >
 	<mx:Script>
 		<![CDATA[
+			import com.medratech.bsse.module.session.SessionManagement;
 			import mx.events.StateChangeEvent;
 			import com.medratech.bsse.util.StatusChangedEvent;
 			import com.medratech.bsse.util.RemoteDataObjectEvent;
@@ -22,6 +23,8 @@
 			
 			[Bindable]
 			public var info:CafeItem;
+			[Bindable]
+			public var sessionManagement:SessionManagement;
 			
 			private var remoteCafeItems:RemoteDataArray;
 			private static var GMTTimeDifference:Number = 120*60*1000;
@@ -47,8 +50,17 @@
 				contextMenuItem = new ContextMenuItem(resourceManager.getString('resources','session.contextmenu.info'), true);
 				contextMenuItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, showInfo);
 				arr.addItem(contextMenuItem);
+				contextMenuItem = new ContextMenuItem(resourceManager.getString('resources','session.contextmenu.delete'));
+				contextMenuItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, deleteSelectedItem);
+				arr.addItem(contextMenuItem);
 				if(info.type != 0 && info.type != 1)
 				{
+					contextMenuItem = new ContextMenuItem(resourceManager.getString('resources','session.contextmenu.shutdowncomp'));
+					contextMenuItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, shutdownItem);
+					arr.addItem(contextMenuItem);
+					contextMenuItem = new ContextMenuItem(resourceManager.getString('resources','session.contextmenu.rebootcomp'));
+					contextMenuItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, rebootItem);
+					arr.addItem(contextMenuItem);
 					contextMenuItem = new ContextMenuItem(resourceManager.getString('resources','session.contextmenu.getscreenshot'), true);
 					contextMenuItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, getScreenshot);
 					arr.addItem(contextMenuItem);
@@ -77,6 +89,7 @@
 				remoteCafeItems = new RemoteDataArray(null, 'cafeItemService');
 				remoteCafeItems.init();
 				remoteCafeItems.addEventListener(RemoteDataObjectEvent.DATA_UPDATED, cafeItemDataReceived);
+				remoteCafeItems.addEventListener(RemoteDataObjectEvent.DATA_DELETED, cafeItemDataReceived);
 				remoteCafeItems.addEventListener(RemoteDataObjectEvent.VERSION_RECEIVED, cafeItemDataReceived);
 				
 				timer = new Timer(120000);
@@ -121,6 +134,12 @@
 				PopUpManager.centerPopUp(openSessionPopup);
 			}
 			
+			private function deleteSelectedItem(event:ContextMenuEvent):void {
+				Alert.show(resourceManager.getString('resources','cafeitem.delete.text'),
+					resourceManager.getString('resources','cafeitem.delete.title'),
+					Alert.OK|Alert.CANCEL,this,deleteFunction,null,Alert.OK);
+			}
+			
 			private function close(event:ContextMenuEvent):void {
 				calculateBill();
 				var closeSessionPopup:CloseSession = new CloseSession();
@@ -145,6 +164,23 @@
 			
 			private function getScreenshot(event:ContextMenuEvent):void {
 				
+			}
+			
+			private function shutdownItem(event:ContextMenuEvent):void {
+				
+			}
+			
+			private function rebootItem(event:ContextMenuEvent):void {
+				
+			}
+			
+			public function deleteFunction(eventObj:CloseEvent):void
+			{
+				if(eventObj.detail==Alert.OK)
+				{
+					remoteCafeItems.remove(info);
+					sessionManagement.refreshList(info.type);		
+				}
 			}
 			
 			public function openSession(limited:Boolean, time:Number):void
@@ -242,6 +278,10 @@
 					info = cafeItem;
 				} else if(event.type == RemoteDataObjectEvent.REFRESHED) {
 					info = remoteCafeItems.remoteReturnObject as CafeItem;
+				} else if(event.type == RemoteDataObjectEvent.DATA_DELETED) {
+					//info = remoteCafeItems.remoteReturnObject as CafeItem;
+					removed();
+					//sessionManagement.refreshList(info.type);
 				}
 			}
 		
@@ -259,7 +299,7 @@
 				<mx:Label text="{info.startTime == 0 ? '-' : dateFormatter.format(new Date(info.startTime))}" />
 			</mx:FormItem>
 			<mx:FormItem label="{resourceManager.getString('resources','cafeitem.elapsed')}">
-				<mx:Label id="elapsedTime" text="{info.startTime == 0 ? '-' : dateFormatter.format(new Date(new Date().getTime() - info.startTime - GMTTimeDifference))}" />
+				<mx:Label id="elapsedTime" text="{info.startTime == 0 || info.status == 0 ? '-' : dateFormatter.format(new Date(new Date().getTime() - info.startTime - GMTTimeDifference))}" />
 			</mx:FormItem>
 			<mx:FormItem label="{resourceManager.getString('resources','cafeitem.ending')}">
 				<mx:Label text="{info.endTime == 0 ? '-' : dateFormatter.format(new Date(info.endTime))}" />

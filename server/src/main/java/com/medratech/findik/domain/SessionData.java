@@ -12,16 +12,7 @@ public class SessionData extends Model {
     private long eventStartTime;
     private long eventEndTime;
     private String eventData;
-    @ManyToOne(cascade=CascadeType.ALL, fetch=FetchType.EAGER)
-    private CafeItem cafeItem;
-
-    public CafeItem getCafeItem() {
-        return cafeItem;
-    }
-
-    public void setCafeItem(CafeItem cafeItem) {
-        this.cafeItem = cafeItem;
-    }
+    private long cafeItemId;
 
     public String getEventData() {
         return eventData;
@@ -45,6 +36,14 @@ public class SessionData extends Model {
 
     public void setEventStartTime(long eventStartTime) {
         this.eventStartTime = eventStartTime;
+    }
+
+    public long getCafeItemId() {
+        return cafeItemId;
+    }
+
+    public void setCafeItemId(long cafeItemId) {
+        this.cafeItemId = cafeItemId;
     }
 
     

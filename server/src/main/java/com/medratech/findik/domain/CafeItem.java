@@ -18,10 +18,8 @@ public class CafeItem extends Model{
     private String generatedId;
     private String IP;
     private String hostname;
-    @ManyToOne(cascade=CascadeType.ALL, fetch=FetchType.EAGER)
+    @ManyToOne(cascade=CascadeType.MERGE, fetch=FetchType.EAGER)
     private Tariff tariff;
-    @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.LAZY)
-    private List<SessionData> sessionData;
     private Integer status = new Integer(0);
     private Long startTime = new Long(0);
     private Long endTime = new Long(0);
@@ -51,12 +49,6 @@ public class CafeItem extends Model{
     }
     public void setTariff(Tariff tariff) {
             this.tariff = tariff;
-    }
-    public List<SessionData> getSessionData() {
-        return sessionData;
-    }
-    public void setSessionData(List<SessionData> sessionData) {
-        this.sessionData = sessionData;
     }
     public String getName() {
         return name;

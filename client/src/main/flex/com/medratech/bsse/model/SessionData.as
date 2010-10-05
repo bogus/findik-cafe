@@ -7,11 +7,10 @@ package com.medratech.bsse.model
 	public class SessionData extends Model
 	{
 		
-		public var time:Number;
-		public var operation:int;
-		public var data:String;
-		public var computer:CafeItem;
-		public var noncomputer:NonComputer;	
+		public var eventEndTime:Number;
+		public var eventStartTime:Number;
+		public var eventData:String;
+		public var cafeItemId:Number;
 		
 		public function SessionData()
 		{

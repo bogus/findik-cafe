@@ -115,5 +115,7 @@
             </list>
         </property>
     </bean>
+    
+    <bean id="springApplicationContext" class="com.medratech.springframework.flex.SpringApplicationContext"/>
 
 </beans>

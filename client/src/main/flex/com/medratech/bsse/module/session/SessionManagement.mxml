@@ -6,6 +6,8 @@ creationComplete="init()" addedToStage="onStage()" removedFromStage="outStage()"
  
 	<mx:Script>
 		<![CDATA[
+			import com.medratech.bsse.module.session.sub.ChangeBanner;
+			import com.medratech.bsse.module.session.sub.ChangeScreenSaver;
 			import com.medratech.bsse.module.session.sub.ChangeRecoverPassword;
 			import com.medratech.bsse.model.Options;
 			import mx.events.CloseEvent;
@@ -31,24 +33,30 @@ creationComplete="init()" addedToStage="onStage()" removedFromStage="outStage()"
 			import org.codehaus.stomp.STOMPClient;
 			
 			[Bindable]
+			public static var sessionManagementInstance:SessionManagement;
+			
+			[Bindable]
 			public var tariffs:ArrayCollection;
 			[Bindable]
 			public var itemTariffs:ArrayCollection;
 			[Bindable]
-			private var gameControllers:ArrayCollection;
+			public var gameControllers:ArrayCollection;
 			[Bindable]
-			private var computers:ArrayCollection;
+			public var computers:ArrayCollection;
 			[Bindable]
-			private var tables:ArrayCollection;
+			public var tables:ArrayCollection;
 			[Bindable]
 			public var options:Options; 
 			
 			[Bindable]
 			private var dashboardData:Object;
+			[Bindable]
+			private var totalIncome:Number = 0;
 			
-			private var remoteComputers:RemoteDataArray;
-			private var remoteGameControllers:RemoteDataArray;
-			private var remoteTables:RemoteDataArray;
+			
+			public var remoteComputers:RemoteDataArray;
+			public var remoteGameControllers:RemoteDataArray;
+			public var remoteTables:RemoteDataArray;
 			public var remoteTariffs:RemoteDataArray;
 			private var remoteItemTariffs:RemoteDataArray;
 			public var remoteOptions:RemoteDataArray;
@@ -59,9 +67,12 @@ creationComplete="init()" addedToStage="onStage()" removedFromStage="outStage()"
 			private var stompChat : STOMPClient = new STOMPClient();
 			
 			private var lastCloseButtonId:String = null;
+			private static var GMTTimeDifference:Number = 120*60*1000;
 			
 			private function init():void
 			{
+				sessionManagementInstance = this;
+					
 				remoteComputers = new RemoteDataArray(null, 'cafeItemService');
 				remoteComputers.init();
 				remoteComputers.addEventListener('dataReceived', computerDataReceived);
@@ -120,8 +131,13 @@ creationComplete="init()" addedToStage="onStage()" removedFromStage="outStage()"
 			
 			private function handleMessages(event : MessageEvent) : void
 			{
-				if(event.message.body == 'update')
+				if(event.message.body.lastIndexOf('update') != -1)
 				{
+					if(event.message.body.lastIndexOf('all') != -1)
+					{
+						remoteGameControllers.getObjectByType(0);
+						remoteTables.getObjectByType(1);
+					}
 					remoteComputers.getObjectByType(2);
 				}
 				else
@@ -196,6 +212,17 @@ creationComplete="init()" addedToStage="onStage()" removedFromStage="outStage()"
 				}
 			}
 			
+			public function refreshList(type:int):void
+			{
+				if(type == 0) {
+					remoteGameControllers.getObjectByType(0);
+				} else if(type == 1) {
+					remoteTables.getObjectByType(1);
+				} else if(type == 2) {
+					remoteComputers.getObjectByType(2);
+				}
+			}
+			
 			private function addNewItem():void
 			{
 				var obj:CafeItem = new CafeItem();
@@ -203,16 +230,29 @@ creationComplete="init()" addedToStage="onStage()" removedFromStage="outStage()"
 				obj.version = 0;
 				obj.name = itemName.text;
 				obj.type = itemType.selectedIndex;
-				if(itemType.selectedIndex == 0)
+				if(itemType.selectedIndex == 0) {
 					remoteGameControllers.insert(obj);
-				else if(itemType.selectedIndex == 1)
+					remoteGameControllers.getObject();
+				}
+				else if(itemType.selectedIndex == 1) {
 					remoteTables.insert(obj);
+					remoteTables.getObject();
+				}
 			}
 			
 			private function tariffSelectionChange():void
 			{
 				var tariff:Tariff = tariffSelect.selectedItem as Tariff;
 				remoteItemTariffs.getObjectByObject(tariff);
+			}
+			
+			private function tariffChange():void
+			{
+				if(tariffs.length > 0)
+				{
+					tariffSelect.selectedItem = tariffs.getItemAt(0);
+					remoteItemTariffs.getObjectByObject(tariffSelect.selectedItem);
+				}
 			}
 			
 			private function openTariffManagement():void
@@ -353,7 +393,9 @@ creationComplete="init()" addedToStage="onStage()" removedFromStage="outStage()"
 					}
 					else if(lastCloseButtonId == closeAll.id)
 					{
-						closeAllSessions();	
+						closeSessions(gameControllers);
+						closeSessions(computers);
+						closeSessions(tables);
 					}
 			   }
 			
@@ -361,25 +403,10 @@ creationComplete="init()" addedToStage="onStage()" removedFromStage="outStage()"
 
 			private function closeSessions(arrCol:ArrayCollection):void
 			{
-				for each(var cafeItem:CafeItem in arrCol)
+				var i:int = 0;
+				for(i = 0 ;  i < arrCol.length; i++)
 				{
-					cafeItem.status = 0;
-				}
-			}
-			
-			private function closeAllSessions():void
-			{
-				for each(var cafeItem:CafeItem in computers)
-				{
-					cafeItem.status = 0;
-				}
-				for each(var cafeItem:CafeItem in tables)
-				{
-					cafeItem.status = 0;
-				}
-				for each(var cafeItem:CafeItem in gameControllers)
-				{
-					cafeItem.status = 0;
+					arrCol.getItemAt(i).status = 0;
 				}
 			}
 			
@@ -398,6 +425,41 @@ creationComplete="init()" addedToStage="onStage()" removedFromStage="outStage()"
 				PopUpManager.centerPopUp(changeRecoverPass);
 			}
 			
+			private function changeScreenSaver():void
+			{
+				var changeSS:ChangeScreenSaver = new ChangeScreenSaver();
+				changeSS.sessionManagement = this;
+				PopUpManager.addPopUp(changeSS, this, true);
+				PopUpManager.centerPopUp(changeSS);
+			}
+			
+			private function changeBanner():void
+			{
+				var changeBn:ChangeBanner = new ChangeBanner();
+				changeBn.sessionManagement = this;
+				PopUpManager.addPopUp(changeBn, this, true);
+				PopUpManager.centerPopUp(changeBn);
+			}
+			
+			private function selectedHistoryDateChanged():void
+			{
+				totalIncome = 0;
+				sessionDataGrid.dataProvider = new ArrayCollection();
+				sessionDataGrid.getRemoteObject().getData(historyDate.selectedDate.getTime(), true);
+			}
+			
+			private function date_labelFunc(item:Object, column:DataGridColumn):String {
+                return dateFormatter.format(new Date(item.eventStartTime));
+            }
+            
+            private function date_labelFunc2(item:Object, column:DataGridColumn):String {
+                return dateFormatter.format(new Date(item.eventEndTime));
+            }
+            
+            private function bill_labelFunc(item:Object, column:DataGridColumn):String {
+            	totalIncome += new Number(item.eventData);
+                return item.eventData.toString();
+            }
 		]]>
 	</mx:Script>
 	<mx:HBox width="100%" height="100%">
@@ -436,7 +498,7 @@ creationComplete="init()" addedToStage="onStage()" removedFromStage="outStage()"
 						dragEnabled="true" id="computerTile" allowMultipleSelection="false">
 						<mx:itemRenderer>
 							<mx:Component>
-								<sub:CafeItemViewer info="{data as CafeItem}" width="170" height="170"/>
+								<sub:CafeItemViewer info="{data as CafeItem}" width="170" height="170" sessionManagement="{SessionManagement.sessionManagementInstance}"/>
 							</mx:Component>
 						</mx:itemRenderer>
 					</mx:TileList>
@@ -451,7 +513,7 @@ creationComplete="init()" addedToStage="onStage()" removedFromStage="outStage()"
 						id="gameControllerTile" dragEnabled="true" allowMultipleSelection="false">
 						<mx:itemRenderer>
 							<mx:Component>
-								<sub:CafeItemViewer info="{data as CafeItem}" width="170" height="170">
+								<sub:CafeItemViewer info="{data as CafeItem}" width="170" height="170" sessionManagement="{SessionManagement.sessionManagementInstance}">
 									<mx:Script>
 										<![CDATA[
 											import com.medratech.bsse.model.CafeItem;
@@ -472,7 +534,7 @@ creationComplete="init()" addedToStage="onStage()" removedFromStage="outStage()"
 						id="tableTile" dragEnabled="true" allowMultipleSelection="false">
 						<mx:itemRenderer>
 							<mx:Component>
-								<sub:CafeItemViewer info="{data as CafeItem}" width="170" height="170"/>
+								<sub:CafeItemViewer info="{data as CafeItem}" width="170" height="170" sessionManagement="{SessionManagement.sessionManagementInstance}"/>
 							</mx:Component>
 						</mx:itemRenderer>
 					</mx:TileList>
@@ -505,7 +567,7 @@ creationComplete="init()" addedToStage="onStage()" removedFromStage="outStage()"
 					click="openTariffManagement()"/>
 				<mx:VBox width="100%" horizontalAlign="center">
 					<mx:Label text="{resourceManager.getString('resources','session.selecttariff')}" />
-					<mx:ComboBox id="tariffSelect" close="tariffSelectionChange()"
+					<mx:ComboBox id="tariffSelect" close="tariffSelectionChange()" dataChange="tariffChange()"
 						dataProvider="{tariffs}" labelField="name" selectedIndex="0"/>
 					<mx:DataGrid id="tariffItemGrid" width="90%" dataProvider="{itemTariffs}"					
 						dragEnter="tariffCrossDragEnter(event)" dragDrop="tariffDragDrop(event)">
@@ -522,15 +584,17 @@ creationComplete="init()" addedToStage="onStage()" removedFromStage="outStage()"
 					click="lastCloseButton(closeAll.id);"/>
 				<!-- <mx:CheckBox label="{resourceManager.getString('resources','session.enablechat')}" id="enableChat" /> -->
 				<mx:CheckBox label="{resourceManager.getString('resources','session.openautomatically')}"
-					selected="{options.openSessionAutomatically}" change="remoteOptions.updateObject(options);" />
+					toolTip="{resourceManager.getString('resources','session.openautomatically.tooltip')}"
+					selected="{options.openSessionAutomatically}" change="remoteOptions.updateObject(options);" 
+					/>
 				<mx:HRule width="100%" />
-				<mx:Button label="Change Recover Password" width="90%" id="recoverPassButton" click="changeRecoverPassword()" />
+				<mx:Button label="{resourceManager.getString('resources','session.option.changerp')}"  id="recoverPassButton" click="changeRecoverPassword()"/>
 				<mx:HRule width="100%" />
-				<mx:Image source="{options.screenSaverImage}" width="200" scaleContent="true" />
-				<mx:Button label="Change Screen Saver" />
+				<mx:Image source="{options.screenSaverImage}" width="{recoverPassButton.width}" scaleContent="true" maintainAspectRatio="true"/>
+				<mx:Button label="{resourceManager.getString('resources','session.option.changess')}" click="changeScreenSaver()" width="90%"/>
 				<mx:HRule width="100%" />
-				<mx:Image source="{options.banner}" width="200" scaleContent="true" />
-				<mx:Button label="Change Banner" />
+				<mx:Image source="{options.banner}" width="{recoverPassButton.width}" scaleContent="true" maintainAspectRatio="true"/>
+				<mx:Button label="{resourceManager.getString('resources','session.option.changebn')}" click="changeBanner()" width="90%"/>
 			</mx:VBox>
 			<mx:VBox width="100%" label="{resourceManager.getString('resources','session.item.title')}">
 				<flexlib:AdvancedForm width="100%" height="100%" undoHistorySize="5" id="itemForm"
@@ -554,6 +618,29 @@ creationComplete="init()" addedToStage="onStage()" removedFromStage="outStage()"
 					</mx:FormItem>
 				</flexlib:AdvancedForm>
 			</mx:VBox>
+			<mx:VBox width="100%" label="{resourceManager.getString('resources','session.history.title')}" height="100%">
+				<mx:HBox width="100%">
+					<mx:Label text="{resourceManager.getString('resources','session.history.selecttime')}" />
+					<mx:DateField selectedDate="{new Date()}" id="historyDate" change="selectedHistoryDateChanged()"
+						firstDayOfWeek="1"/>
+				</mx:HBox>
+				<mx:Label text="{resourceManager.getString('resources','session.history.total') + ' ' + numberFormatter.format(totalIncome)}" />
+				<component:RemoteDoubleClickDataGrid editable="false" id="sessionDataGrid"
+					remoteDestination="sessionDataService"  height="100%" width="100%"
+					creationComplete="{sessionDataGrid.init(); sessionDataGrid.getRemoteObject().getData(historyDate.selectedDate.getTime(), true);}">
+					<component:columns>
+						<mx:DataGridColumn dataField="eventStartTime" headerText="{resourceManager.getString('resources','cafeitem.info.dg.starttime')}" 
+							width="70" labelFunction="date_labelFunc"/>
+						<mx:DataGridColumn dataField="eventEndTime" headerText="{resourceManager.getString('resources','cafeitem.info.dg.endtime')}" width="70"
+							labelFunction="date_labelFunc2"/>
+						<mx:DataGridColumn dataField="eventData" headerText="{resourceManager.getString('resources','cafeitem.info.dg.bill')}" 
+							width="60" labelFunction="bill_labelFunc"/>
+					</component:columns>
+				</component:RemoteDoubleClickDataGrid>
+			</mx:VBox>
 		</mx:Accordion>
 	</mx:HBox>
+	<mx:DateFormatter id="dateFormatter" formatString="JJ:NN" />
+	<mx:NumberFormatter id="numberFormatter"  precision="2" rounding="up"/>
+
 </mx:Canvas>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
-	title="{resourceManager.getString('resources','options.changess.title')}">
+	title="{resourceManager.getString('resources','options.changebn.title')}">
 	<mx:Script>
 		<![CDATA[
 			import mx.managers.PopUpManager;
@@ -37,7 +37,7 @@
 				var encoder:JPEGEncoder = new JPEGEncoder();
 				var rawBytes:ByteArray = encoder.encode(bitmapData);
  
- 				sessionManagement.options.screenSaverImage = rawBytes;
+ 				sessionManagement.options.banner = rawBytes;
  				sessionManagement.remoteOptions.updateObject(sessionManagement.options);
  				close();
 			}
